@@ -1,0 +1,3 @@
+from decomposition import Decomposition
+from td import TreeDecomposition
+from ghtd import GeneralizedHypertreeDecomposition
