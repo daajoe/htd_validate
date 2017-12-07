@@ -18,7 +18,7 @@ class ValidateTDTestCase(unittest.TestCase):
 
     def assertFromFiles(self,graph_file, td_file, assertTrue=True):
         hg = getattr(decomp_validate.utils, self.__class__._gr_classname).from_file(graph_file)
-        decomp = getattr(decomp_validate.decompositions, self.__class__._td_classname).from_file(td_file)
+        decomp = getattr(decomp_validate.decompositions, self.__class__._td_classname).from_file(td_file, True)
         self.assertEqual(assertTrue, decomp.validate(hg), "td validation result wrong, should be: " + str(assertTrue) + " in: " + td_file)
 
     def setUp(self):

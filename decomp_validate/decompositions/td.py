@@ -26,7 +26,7 @@ class TreeDecomposition(Decomposition):
         return len(self.bags)
 
     @staticmethod
-    def from_file(filename):
+    def from_file(filename, enforceStrict=False):
         """
         :param filename:
         :rtype: TreeDecomposition
@@ -49,6 +49,7 @@ class TreeDecomposition(Decomposition):
                     elif line[0] == 's' and line[1] == 'td':
                         num_bags, td_max_bag_size, num_vertices = map(int, line[2:])
                     elif line[0] == 'b':
+                        if enforceStrict and len(line) < 2: return TreeDecomposition()
                         bag_name = int(line[1])
                         td.bags[bag_name] = set(map(int, line[2:]))
                         td.tree.add_node(bag_name)
@@ -72,14 +73,17 @@ class TreeDecomposition(Decomposition):
                 td.tree.add_node(td.bags.iterkeys().next())
             if len(td) != num_bags:
                 sys.stderr.write('WARNING: Number of bags differ. Was %s expected %s.\n' % (len(td), num_bags))
+                if enforceStrict: return TreeDecomposition()
             if len(set(chain.from_iterable(td.bags.itervalues()))) != num_vertices:
                 sys.stderr.write(
                     'WARNING: Number of vertices differ. Was %s expected %s.\n' % (
                         td.tree.number_of_nodes(), num_vertices))
+                if enforceStrict: return TreeDecomposition()
             if td.max_bag_size() != td_max_bag_size:
                 sys.stderr.write(
                     'WARNING: Number of vertices differ. Was %s expected %s.\n' % (
                         td.max_bag_size(), td_max_bag_size))
+                if enforceStrict: return TreeDecomposition()
         return td
 
     #TODO: move the validation parts to the validators???
