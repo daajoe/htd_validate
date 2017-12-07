@@ -58,13 +58,15 @@ def names(x):
 
 
 available_validators = [decomp_validate.validators.TreeDecompositionValidator,
-                        decomp_validate.validators.GeneralizedHypertreeDecompositionValidator
+                        decomp_validate.validators.GeneralizedHypertreeDecompositionValidator,
+                        decomp_validate.validators.HypertreeDecompositionValidator,
                         #                         decomp_validate.validators.HyperDecomposition,
                         #                         decomp_validate.validators.GeneralizedHyperDecomposition,
                         #                        decomp_validate.validators.FractionalHyperDecomposition
                         ]
 
-#TODO: implement short names for ghtw validator
+
+# TODO: implement short names for ghtw validator
 
 def parse_args():
     parser = argparse.ArgumentParser(description='%(prog)s -f instance')
@@ -88,14 +90,14 @@ def main():
     print validator_class_name
     Validator = getattr(decomp_validate.validators, validator_class_name)()
 
-    #TODO: implement read header to guess decomposition type and remove it from the commandline arguments
+    # TODO: implement read header to guess decomposition type and remove it from the commandline arguments
 
-    #TODO: next for hypertree decompositions
-    #TODO: generalized hypertree decompositions
-    #TODO:  fractional hyper decompositions
-    HG = getattr(decomp_validate.utils,Validator.graph_type()).from_file(graph_filename)
-    Decomp = getattr(decomp_validate.decompositions,Validator.decomposition_type()).from_file(decomposition_filename)
-    ret=Decomp.validate(HG)
+    # TODO: next for hypertree decompositions
+    # TODO: generalized hypertree decompositions
+    # TODO:  fractional hyper decompositions
+    HG = getattr(decomp_validate.utils, Validator.graph_type()).from_file(graph_filename)
+    Decomp = getattr(decomp_validate.decompositions, Validator.decomposition_type()).from_file(decomposition_filename)
+    ret = Decomp.validate(HG)
     exit(not ret)
 
 

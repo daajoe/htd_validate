@@ -1,23 +1,19 @@
-from cStringIO import StringIO
-from collections import defaultdict
 import logging
+from collections import defaultdict
+
 import networkx as nx
+from cStringIO import StringIO
 
 
 # python: check abstract class
 class Decomposition(object):
     def __init__(self):
-        self.tree = nx.Graph()
+        self.tree = nx.DiGraph()
         self.bags = {}
         self.hypergraph = None
 
     @staticmethod
     def graph_type():
-        raise NotImplementedError(
-            "abstract method -- subclass %s must override" % self.__class__)
-
-    @staticmethod
-    def decomposition_type():
         raise NotImplementedError(
             "abstract method -- subclass %s must override" % self.__class__)
 
@@ -42,7 +38,7 @@ class Decomposition(object):
         vertex2bags = self.bag_occuences()
         for v in self.hypergraph.nodes_iter():
             SG = self.tree.subgraph(vertex2bags[v])
-            if not nx.is_connected(SG):
+            if not nx.is_connected(SG.to_undirected()):
                 logging.error('Subgraph induced by vertex "%s" is not connected' % v)
                 string = StringIO()
                 nx.write_multiline_adjlist(SG, string)
