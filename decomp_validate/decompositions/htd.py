@@ -42,8 +42,10 @@ class HypertreeDecomposition(GeneralizedHypertreeDecomposition):
                 logging.error('Bag of the subtree induced at "%s" contained "%s"' %(u,vertices_in_bags_below_u))
                 logging.error('Vertices returned from the edge function are "%s"' %self._B(u))
                 logging.error('Bag content is: %s' %self.bags[u])
-                logging.error('Hence, not (vertices_in_bags_below_u & self._B(u) <= self.bags[u]) does not hold.')
+                logging.error('Hence, not (vertices_in_bags_below_u & self._B(u) <= self.bags[u]) does not hold for node %s.' %u)
                 return False
+        logging.info('Inverse edge function property *holds*.')
+        logging.info('='*80)
         return True
 
     def validate(self, graph):

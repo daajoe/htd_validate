@@ -1,8 +1,6 @@
 import logging
-import subprocess
 import sys
 import traceback
-from tempfile import NamedTemporaryFile
 
 import networkx as nx
 from cStringIO import StringIO
@@ -82,13 +80,13 @@ class TreeDecomposition(Decomposition):
                         td.max_bag_size(), td_max_bag_size))
         return td
 
-    #TODO: move the validation parts to the validators???
+    # TODO: move the validation parts to the validators???
     def vertices_covered(self):
         occurences = self.bag_occuences()
         for v in self.hypergraph.nodes_iter():
             if v not in occurences:
-                logging.error('Vertex "%v" does not occur in any bag.' %v)
-                logging.error('Bags contain the following vertices: %s' %occurences)
+                logging.error('Vertex "%s" does not occur in any bag.' % v)
+                logging.error('Bags contain the following vertices: %s' % occurences)
                 return False
         return True
 
@@ -134,23 +132,6 @@ class TreeDecomposition(Decomposition):
         root_id = lengths.index(max_bag_size)
         return bagids2lengths.keys()[root_id]
 
-    def relabeled_decomposition(self, offset, vertex_mapping, inplace=False):
-        if inplace:
-            raise NotImplementedError("Not implemented yet.")
-        offset += 1
-        tree_mapping = {org_id: id for id, org_id in izip(count(start=offset), self.tree.nodes_iter())}
-        new_bags = {}
-        for i in xrange(offset, offset + len(self.tree.nodes())):
-            new_bags[i] = self.bags[self.tree.nodes()[i - offset]]
-        ret_tree = nx.relabel_nodes(self.tree, tree_mapping, copy=False)
-        # relabeled_decomposition the contents of the bags according to mapping
-        inv_mapping = dict(imap(reversed, vertex_mapping.items()))
-        for key, bag in new_bags.iteritems():
-            new_bags[key] = set(map(lambda x: inv_mapping[x], bag))
-        # TODO: refactor
-        return TreeDecomposition(tree=ret_tree, bags=new_bags, temp_path=self.temp_path, delete_temp=self.delete_temp,
-                                 plot_if_td_invalid=self.plot_if_td_invalid)
-
     def show(self, layout, nolabel=0):
         """ show hypergraph
         layout 1:graphviz,
@@ -160,6 +141,8 @@ class TreeDecomposition(Decomposition):
         5: random,
         6: shell
         """
+        #TODO render decompositions:
+        raise NotImplementedError()
         if not self.plot_if_td_invalid:
             logging.error('written_decomp(tree)=%s', self.tree.edges())
             logging.error('written_decomp(bags)=%s', self.bags)
@@ -195,30 +178,3 @@ class TreeDecomposition(Decomposition):
                 nx.draw_networkx_labels(m, pos)
             nx.draw(m, pos)
             plt.show()
-
-    def simplify(self):
-        node = iter(self.tree.nodes())
-        while True:
-            try:
-                i = next(node)
-                neigh_list = set(self.tree[i])
-                for neigh in self.tree[i]:
-                    if self.bags[i].issubset(self.bags[neigh]):
-                        for neigh1 in neigh_list - set([neigh]):
-                            self.tree.add_edge(neigh, neigh1)
-                        self.tree.remove_node(i)
-                        del self.bags[i]
-                        break
-            except StopIteration:
-                break
-        if self.always_validate:
-            self.validate2()
-
-
-class TrivialTreeDecomposition(TreeDecomposition):
-    def __init__(self):
-        super(TrivialTreeDecomposition, self).__init__()
-
-    def from_graph(self, graph):
-        self.bags = {1: graph.nodes()}
-        self.tree.add_node(1)
