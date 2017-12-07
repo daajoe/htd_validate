@@ -20,6 +20,7 @@ class Decomposition(object):
     def edges_covered(self):
         # initialise with edges
         covered_edges = {e: False for e in self.hypergraph.edges_iter()}
+        # print covered_edges, self.bags
         for e in self.hypergraph.edges_iter():
             if not any(set(e) <= bag for bag in self.bags.itervalues()):
                 logging.error('Edge "%s" is not covered in any bag.' % str(e))
