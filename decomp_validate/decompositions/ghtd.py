@@ -84,7 +84,8 @@ class GeneralizedHypertreeDecomposition(Decomposition):
                 decomp.tree.add_node(decomp.bags.iterkeys().next())
             if len(decomp.hyperedge_function) != num_bags:
                 logging.error(
-                    'ERROR (reading decomposition): Missing function mapping for some node of the tree. Was %s expected %s \n' % (
+                    'ERROR (reading decomposition): Missing function mapping for some node of the tree. '
+                    'Was %s expected %s \n' % (
                         len(decomp.hyperedge_function), num_bags))
             if len(decomp) != num_bags:
                 logging.error('ERROR (reading decomposition): Number of bags differ. Was %s expected %s.\n' % (
@@ -105,9 +106,10 @@ class GeneralizedHypertreeDecomposition(Decomposition):
 
     def _edge_ids_where_v_occurs(self, v):
         # {k: v for k, v in d.items() if v > 0}
-        logging.info("Computing hyperedges where v='%s' occurs..." % v)
-        logging.info("Hyperedges %s" % self.hypergraph.edges())
+        logging.debug("Computing hyperedges where v='%s' occurs..." % v)
+        logging.debug("Hyperedges %s" % self.hypergraph.edges())
         edge_ids = filter(lambda e: v in self.hypergraph.get_edge(e), self.hypergraph.edge_ids_iter())
+        logging.debug("Edge_ids are %s" % edge_ids)
         return edge_ids
 
     def _B(self, t):
@@ -121,12 +123,13 @@ class GeneralizedHypertreeDecomposition(Decomposition):
             # lambda_u_e_v: {lambda_u(e) : e \in E(H), v \in e}
             lambda_u_e_v = map(lambda e: self.hyperedge_function[t][e], self._edge_ids_where_v_occurs(v))
             logging.info('lambda(%s) = %s' % (t, lambda_u_e_v))
+            logging.info('sum(%s) = %s' % (t, sum(lambda_u_e_v)))
             if sum(lambda_u_e_v) >= 1:
                 ret.add(v)
+        logging.info("B(lambda_%s) = '%s'" % (t, ret))
         return ret
 
     def edge_function_holds(self):
-        occurences = self.bag_occuences()
         for t in self.tree.nodes_iter():
             if not (self.bags[t] <= self._B(t)):
                 logging.error('Edge function property does not hold for node "%s"' % t)
@@ -137,7 +140,7 @@ class GeneralizedHypertreeDecomposition(Decomposition):
 
     def validate(self, graph):
         self.hypergraph = graph
-        if self.edges_covered() and self.is_connected() and self.edge_function_holds():
+        if self.is_tree() and self.edges_covered() and self.is_connected() and self.edge_function_holds():
             return True
         else:
             logging.error('ERROR in Tree Decomposition.')

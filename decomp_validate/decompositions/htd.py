@@ -29,6 +29,9 @@ class HypertreeDecomposition(GeneralizedHypertreeDecomposition):
         return len(self.bags)
 
     def inverse_edge_function_holds(self):
+        logging.info('='*80)
+        logging.info('Inverse edge function property')
+        logging.info('='*80)
         for u in self.tree.nodes_iter():
             T_u = dfs_tree(self.tree, u)
             vertices_in_bags_below_u = set()
@@ -45,9 +48,7 @@ class HypertreeDecomposition(GeneralizedHypertreeDecomposition):
 
     def validate(self, graph):
         self.hypergraph = graph
-        print self.inverse_edge_function_holds()
-        exit(1)
-        if self.edges_covered() and self.is_connected() and self.edge_function_holds() and \
+        if self.is_tree() and self.edges_covered() and self.is_connected() and self.edge_function_holds() and \
                 self.inverse_edge_function_holds():
             return True
         else:

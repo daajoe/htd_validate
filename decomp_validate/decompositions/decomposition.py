@@ -19,12 +19,19 @@ class Decomposition(object):
 
     def edges_covered(self):
         # initialise with edges
+        #TODO: something missing here
         covered_edges = {e: False for e in self.hypergraph.edges_iter()}
         for e in self.hypergraph.edges_iter():
             if not any(set(e) <= bag for bag in self.bags.itervalues()):
                 logging.error('Edge "%s" is not covered in any bag.' % str(e))
                 return False
         return True
+
+    def is_tree(self):
+        ret = nx.is_tree(self.tree)
+        if not ret:
+            logging.error('The underlying graph is not a tree.')
+        return ret
 
     def bag_occuences(self):
         vertex2bags = defaultdict(set)

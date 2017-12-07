@@ -1,6 +1,7 @@
 import logging
 import subprocess
 import sys
+import traceback
 from tempfile import NamedTemporaryFile
 
 import networkx as nx
@@ -58,7 +59,8 @@ class TreeDecomposition(Decomposition):
                 logging.critical("Undefined input.")
                 logging.critical(e)
                 logging.warning("Output was:")
-                for line in lines.split('\n'):
+                fobj.seek(0)
+                for line in fobj.readlines():
                     logging.warning(line)
                 for line in traceback.format_exc().split('\n'):
                     logging.critical(line)
@@ -92,7 +94,7 @@ class TreeDecomposition(Decomposition):
 
     def validate(self, graph):
         self.hypergraph = graph
-        if self.edges_covered() and self.is_connected() and self.vertices_covered():
+        if self.is_tree() and self.edges_covered() and self.is_connected() and self.vertices_covered():
             return True
         else:
             logging.error('ERROR in Tree Decomposition.')
