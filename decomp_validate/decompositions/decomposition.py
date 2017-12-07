@@ -29,7 +29,7 @@ class Decomposition(object):
         return True
 
     def is_tree(self):
-        ret = nx.is_tree(self.tree)
+        ret = len(self.tree) == 0 or nx.is_tree(self.tree)
         if not ret:
             logging.error('The underlying graph is not a tree.')
         return ret

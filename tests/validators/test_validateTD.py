@@ -14,8 +14,8 @@ class TestValidateTD(vtd.ValidateTDTestCase):
     def test_should_be_valid(self):
         self.validateFolder("should-be-valid", True)
 
-    def test_empty(self):
-        self.validateFolder("empty", False)
+    #def test_empty(self):
+    #    self.validateFolder("empty", False)
 
     def test_invalid(self):
         self.validateFolder("invalid", False)

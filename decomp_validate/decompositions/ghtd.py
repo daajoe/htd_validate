@@ -28,7 +28,7 @@ class GeneralizedHypertreeDecomposition(Decomposition):
 
     # TODO: detect format from file header
     @classmethod
-    def from_file(cls, filename):
+    def from_file(cls, filename, enforceStrict=False):
         """
         :param filename:
         :rtype: TreeDecomposition
