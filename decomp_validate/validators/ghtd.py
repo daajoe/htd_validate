@@ -5,7 +5,7 @@ import decomp_validate as dv
 
 class GeneralizedHypertreeDecompositionValidator(Validator):
     def __init__(self):
-        pass
+        super(GeneralizedHypertreeDecompositionValidator, self).__init__()
 
     def decomposition_type(self):
         return dv.decompositions.GeneralizedHypertreeDecomposition.__name__

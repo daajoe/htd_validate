@@ -1,13 +1,12 @@
 #!/usr/bin/env false
 
 from __future__ import absolute_import
-import unittest
+
 import os
+import unittest
 
-import inspect
-
-import decomp_validate.utils
 import decomp_validate.decompositions
+import decomp_validate.utils
 
 
 class ValidateTDTestCase(unittest.TestCase):
@@ -18,8 +17,14 @@ class ValidateTDTestCase(unittest.TestCase):
 
     def assertFromFiles(self,graph_file, td_file, assertTrue=True):
         hg = getattr(decomp_validate.utils, self.__class__._gr_classname).from_file(graph_file)
-        decomp = getattr(decomp_validate.decompositions, self.__class__._td_classname).from_file(td_file, True)
-        self.assertEqual(assertTrue, decomp.validate(hg), "td validation result wrong, should be: " + str(assertTrue) + " in: " + td_file)
+        if assertTrue not in [True, False]:
+            with self.assertRaises(SystemExit):
+                decomp = getattr(decomp_validate.decompositions, self.__class__._td_classname).from_file(td_file, True)
+                self.assertEqual(assertTrue, decomp.validate(hg),
+                                 "td validation result wrong, should be: " + str(assertTrue) + " in: " + td_file)
+        else:
+            decomp = getattr(decomp_validate.decompositions, self.__class__._td_classname).from_file(td_file, True)
+            self.assertEqual(assertTrue, decomp.validate(hg), "td validation result wrong, should be: " + str(assertTrue) + " in: " + td_file)
 
     def setUp(self):
         pass

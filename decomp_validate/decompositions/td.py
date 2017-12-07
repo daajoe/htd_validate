@@ -36,26 +36,50 @@ class TreeDecomposition(Decomposition):
         with open(filename, 'r') as fobj:
             num_bags = td_max_bag_size = num_vertices = 0
             try:
+                header_seen = False
+                edge_seen = False
                 for line in fobj.readlines():
                     line = line.split()
                     # noinspection PySimplifyBooleanCheck
                     if line == []:
                         continue
                     if line[0] == 'c':
-                        logging.warning('-' * 20 + 'INFO from decomposition reader' + '-' * 20)
-                        logging.warning('%s' % ' '.join(line))
-                        logging.warning('-' * 80)
+                        logging.info('-' * 20 + 'INFO from decomposition reader' + '-' * 20)
+                        logging.info('%s' % ' '.join(line))
+                        logging.info('-' * 80)
                         continue
                     elif line[0] == 's' and line[1] == 'td':
-                        num_bags, td_max_bag_size, num_vertices = map(int, line[2:])
+                        if header_seen:
+                            logging.critical('Duplicate header. Exiting...')
+                            exit(2)
+                        try:
+                            num_bags, td_max_bag_size, num_vertices = map(int, line[2:])
+                        except ValueError, e:
+                            logging.error(e)
+                            logging.critical('Too many or too few arguments in header. Exiting...')
+                            exit(2)
+                        header_seen = True
                     elif line[0] == 'b':
+                        if not header_seen:
+                            logging.critical('Bag before header. Exiting...')
+                            exit(2)
                         if enforceStrict and len(line) < 2: return TreeDecomposition()
                         bag_name = int(line[1])
+                        if td.bags.has_key(bag_name):
+                            logging.critical('Duplicate bag. Exiting...')
+                            exit(2)
                         td.bags[bag_name] = set(map(int, line[2:]))
                         td.tree.add_node(bag_name)
+                        if edge_seen:
+                            logging.critical('Edge before bag. Exiting...')
+                            exit(2)
                     else:
+                        if not header_seen:
+                            logging.critical('Edge before header. Exiting...')
+                            exit(2)
                         u, v = map(int, line)
                         td.tree.add_edge(u, v)
+                        edge_seen = True
             except ValueError as e:
                 logging.critical("Undefined input.")
                 logging.critical(e)
@@ -74,25 +98,28 @@ class TreeDecomposition(Decomposition):
             if len(td) != num_bags:
                 sys.stderr.write('WARNING: Number of bags differ. Was %s expected %s.\n' % (len(td), num_bags))
                 if enforceStrict: return TreeDecomposition()
+                exit(2)
             if len(set(chain.from_iterable(td.bags.itervalues()))) != num_vertices:
                 sys.stderr.write(
                     'WARNING: Number of vertices differ. Was %s expected %s.\n' % (
                         td.tree.number_of_nodes(), num_vertices))
                 if enforceStrict: return TreeDecomposition()
+                exit(2)
             if td.max_bag_size() != td_max_bag_size:
                 sys.stderr.write(
                     'WARNING: Number of vertices differ. Was %s expected %s.\n' % (
                         td.max_bag_size(), td_max_bag_size))
                 if enforceStrict: return TreeDecomposition()
+                exit(2)
         return td
 
-    #TODO: move the validation parts to the validators???
+    # TODO: move the validation parts to the validators???
     def vertices_covered(self):
         occurences = self.bag_occuences()
         for v in self.hypergraph.nodes_iter():
             if v not in occurences:
-                logging.error('Vertex "%v" does not occur in any bag.' %v)
-                logging.error('Bags contain the following vertices: %s' %occurences)
+                logging.error('Vertex "%s" does not occur in any bag.' % v)
+                logging.error('Bags contain the following vertices: %s' % occurences)
                 return False
         return True
 

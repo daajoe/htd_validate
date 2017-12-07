@@ -60,9 +60,7 @@ def names(x):
 available_validators = [decomp_validate.validators.TreeDecompositionValidator,
                         decomp_validate.validators.GeneralizedHypertreeDecompositionValidator,
                         decomp_validate.validators.HypertreeDecompositionValidator,
-                        #                         decomp_validate.validators.HyperDecomposition,
-                        #                         decomp_validate.validators.GeneralizedHyperDecomposition,
-                        #                        decomp_validate.validators.FractionalHyperDecomposition
+                        decomp_validate.validators.FractionalHypertreeDecompositionValidator
                         ]
 
 

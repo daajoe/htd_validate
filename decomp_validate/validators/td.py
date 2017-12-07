@@ -5,7 +5,7 @@ import decomp_validate as dv
 
 class TreeDecompositionValidator(Validator):
     def __init__(self):
-        pass
+        super(TreeDecompositionValidator, self).__init__()
 
     def decomposition_type(self):
         return dv.decompositions.TreeDecomposition.__name__

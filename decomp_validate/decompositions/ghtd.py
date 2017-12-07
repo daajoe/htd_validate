@@ -27,6 +27,8 @@ class GeneralizedHypertreeDecomposition(Decomposition):
         return len(self.bags)
 
     # TODO: detect format from file header
+    # TODO: merge with td
+    # TODO: syntax check for htd|ghtd|fhtd
     @classmethod
     def from_file(cls, filename, enforceStrict=False):
         """
@@ -60,11 +62,13 @@ class GeneralizedHypertreeDecomposition(Decomposition):
                         u, v = map(int, line)
                         if u not in decomp.bags.keys():
                             logging.error(
-                                "ERROR (reading decomposition): Edge in the tree (%s,%s) without a corresponding bag for node %s." % (
+                                "ERROR (reading decomposition): Edge in the tree (%s,%s) without a corresponding bag "
+                                "for node %s." % (
                                     u, v, u))
                         if v not in decomp.bags.keys():
                             logging.error(
-                                "ERROR (reading decomposition): Edge in the tree (%s,%s) without a corresponding bag for node %s." % (
+                                "ERROR (reading decomposition): Edge in the tree (%s,%s) without a corresponding bag "
+                                "for node %s." % (
                                     u, v, v))
                         decomp.tree.add_edge(u, v)
             except ValueError as e:
