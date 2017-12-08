@@ -1,7 +1,7 @@
 #!/usr/bin/env false
 
 from validator import Validator
-import decomp_validate as dv
+import htd_validate as dv
 
 
 class HypertreeDecompositionValidator(Validator):

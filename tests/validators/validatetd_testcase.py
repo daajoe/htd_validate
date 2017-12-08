@@ -5,8 +5,8 @@ from __future__ import absolute_import
 import os
 import unittest
 
-import decomp_validate.decompositions
-import decomp_validate.utils
+import htd_validate.decompositions
+import htd_validate.utils
 
 
 class ValidateTDTestCase(unittest.TestCase):
@@ -16,14 +16,14 @@ class ValidateTDTestCase(unittest.TestCase):
     _gr_classname = "Graph"
 
     def assertFromFiles(self,graph_file, td_file, assertTrue=True):
-        hg = getattr(decomp_validate.utils, self.__class__._gr_classname).from_file(graph_file)
+        hg = getattr(htd_validate.utils, self.__class__._gr_classname).from_file(graph_file)
         if assertTrue not in [True, False]:
             with self.assertRaises(SystemExit):
-                decomp = getattr(decomp_validate.decompositions, self.__class__._td_classname).from_file(td_file, True)
+                decomp = getattr(htd_validate.decompositions, self.__class__._td_classname).from_file(td_file, True)
                 self.assertEqual(assertTrue, decomp.validate(hg),
                                  "td validation result wrong, should be: " + str(assertTrue) + " in: " + td_file)
         else:
-            decomp = getattr(decomp_validate.decompositions, self.__class__._td_classname).from_file(td_file, True)
+            decomp = getattr(htd_validate.decompositions, self.__class__._td_classname).from_file(td_file, True)
             self.assertEqual(assertTrue, decomp.validate(hg), "td validation result wrong, should be: " + str(assertTrue) + " in: " + td_file)
 
     def setUp(self):

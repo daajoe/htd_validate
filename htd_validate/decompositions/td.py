@@ -10,8 +10,8 @@ from itertools import count, imap, chain, izip
 from networkx.drawing.nx_agraph import graphviz_layout
 from operator import itemgetter
 
-from decomp_validate.decompositions import Decomposition
-from decomp_validate.utils import Graph
+from htd_validate.decompositions import Decomposition
+from htd_validate.utils import Graph
 
 
 class TreeDecomposition(Decomposition):

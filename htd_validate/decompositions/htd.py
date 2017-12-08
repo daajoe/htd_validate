@@ -4,9 +4,9 @@ from collections import defaultdict
 from cStringIO import StringIO
 from networkx.algorithms.traversal.depth_first_search import dfs_tree
 
-from decomp_validate.decompositions import Decomposition
-from decomp_validate.decompositions import GeneralizedHypertreeDecomposition
-from decomp_validate.utils import Hypergraph
+from htd_validate.decompositions import Decomposition
+from htd_validate.decompositions import GeneralizedHypertreeDecomposition
+from htd_validate.utils import Hypergraph
 
 
 class HypertreeDecomposition(GeneralizedHypertreeDecomposition):

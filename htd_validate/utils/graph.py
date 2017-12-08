@@ -16,6 +16,9 @@
 # <http://www.gnu.org/licenses/>.
 #
 from __future__ import print_function
+
+import logging
+
 from cStringIO import StringIO
 import gzip
 from bz2 import BZ2File
@@ -96,6 +99,10 @@ class Graph(nx.Graph):
                     num_edges = int(line[3])
                     if header_only:
                         return num_verts, num_edges
+                    if num_verts == 0:
+                        logging.error("Empty graph. Exiting.")
+                        exit(2)
+
                 elif line[0] != 'c':
                     if is_dimacs:
                         graph.add_edge(int(line[1]), int(line[2]))
@@ -106,9 +113,9 @@ class Graph(nx.Graph):
                 stream.close()
 
         if graph.number_of_edges() < num_edges:
-            print("edges missing: read=%s announced=%s" % (graph.number_of_edges(), num_edges))
+            logging.error("edges missing: read=%s announced=%s" % (graph.number_of_edges(), num_edges))
         if graph.number_of_nodes() < num_verts:
-            print("vertices missing: read=%s announced=%s" % (graph.number_of_edges(), num_edges))
+            logging.error("vertices missing: read=%s announced=%s" % (graph.number_of_edges(), num_edges))
         return graph
 
     def write_dimacs(self, stream, copy=True):

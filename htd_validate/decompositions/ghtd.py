@@ -7,8 +7,8 @@ from cStringIO import StringIO
 from itertools import count, imap, chain, izip
 from operator import itemgetter
 
-from decomp_validate.decompositions import Decomposition
-from decomp_validate.utils import Hypergraph
+from htd_validate.decompositions import Decomposition
+from htd_validate.utils import Hypergraph
 
 
 class GeneralizedHypertreeDecomposition(Decomposition):

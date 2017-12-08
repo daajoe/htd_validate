@@ -1,6 +1,6 @@
 #!/usr/bin/env false
 
-import decomp_validate as dv
+import htd_validate as dv
 
 
 class Validator(object):
