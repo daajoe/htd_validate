@@ -10,11 +10,12 @@ from htd_validate.utils import Hypergraph
 
 
 class HypertreeDecomposition(GeneralizedHypertreeDecomposition):
+    _problem_string = 'htd'
+
     @staticmethod
     def decomposition_type():
         pass
 
-    _problem_string = 'htd'
 
     @staticmethod
     def graph_type():

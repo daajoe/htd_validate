@@ -7,6 +7,8 @@ from cStringIO import StringIO
 
 # python: check abstract class
 class Decomposition(object):
+    _problem_string = 'missing'
+
     def __init__(self):
         self.tree = nx.DiGraph()
         self.bags = {}
@@ -14,8 +16,7 @@ class Decomposition(object):
 
     @staticmethod
     def graph_type():
-        raise NotImplementedError(
-            "abstract method -- subclass %s must override" % self.__class__)
+        raise NotImplementedError("abstract method -- subclass must override")
 
     def edges_covered(self):
         # initialise with edges

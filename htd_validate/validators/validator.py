@@ -1,17 +1,22 @@
 #!/usr/bin/env false
-
-import htd_validate as dv
+from abc import ABCMeta
 
 
 class Validator(object):
+    __metaclass__ = ABCMeta
+    _baseclass = None
+
     def __init__(self):
         pass
 
-    def validate(self, hypergraph, decomposition):
-        pass
+    @classmethod
+    def graph_type(cls):
+        return cls._baseclass.graph_type()
 
-    def decomposition_type(self):
-        return dv.decompositions.TreeDecomposition
+    @classmethod
+    def short_name(cls):
+        return cls._baseclass._problem_string
 
-    def graph_type(self):
-        return dv.decompositions.TreeDecomposition.graph_type()
+    @classmethod
+    def decomposition_type(cls):
+        return cls._baseclass.__name__

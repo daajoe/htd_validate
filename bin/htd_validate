@@ -15,7 +15,6 @@
 # License along with htd_validate.  If not, see
 # <http://www.gnu.org/licenses/>.
 
-# from __future__ import absolute_import, print_function
 from __future__ import absolute_import
 
 import argparse
@@ -23,6 +22,7 @@ import inspect
 import logging
 import logging.config
 import os
+import subprocess
 import sys
 
 # TODO: figure out a new way to use imports for binaries here
@@ -37,7 +37,13 @@ import htd_validate
 
 __author__ = 'Johannes K. Fichte & Markus Hecher'
 __license__ = 'GPL'
-__version__ = '1.0.1-dev'
+
+
+def get_git_revision_short_hash():
+    return subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD'])[:-1]
+
+
+__version__ = '1.0.1-dev (hash: %s)' % get_git_revision_short_hash()
 
 
 def setup_logging(config_file='%s/logging.conf' % (os.path.dirname(__file__))):
@@ -55,32 +61,30 @@ def is_valid_file(parser, arg):
     return arg
 
 
-def names(x):
-    return map(lambda x: "%s" % x.__name__, x)
-
 # TODO: implement read header to guess decomposition type and remove it from the commandline arguments
-# TODO: implement short names for ghtw validator
-available_validators = [htd_validate.validators.AutoDecompositionValidator,
-                        htd_validate.validators.TreeDecompositionValidator,
-                        htd_validate.validators.GeneralizedHypertreeDecompositionValidator,
-                        htd_validate.validators.HypertreeDecompositionValidator,
-                        htd_validate.validators.FractionalHypertreeDecompositionValidator
-                        ]
+available_validators = [
+    htd_validate.validators.AutoDecompositionValidator,
+    htd_validate.validators.TreeDecompositionValidator,
+    htd_validate.validators.GeneralizedHypertreeDecompositionValidator,
+    htd_validate.validators.HypertreeDecompositionValidator,
+    htd_validate.validators.FractionalHypertreeDecompositionValidator
+]
+d_short_names = {cls.short_name(): cls for cls in available_validators}
 
 
 def parse_args():
     parser = argparse.ArgumentParser(description='%(prog)s')
     parser.add_argument('--version', action='version', version='%(prog)s {version}'.format(version=__version__))
     parser.add_argument('-t', '--type', dest='validator', action='store', type=str, help='Type of the Decomposition',
-                        choices=names(available_validators),
-                        default=htd_validate.validators.TreeDecompositionValidator.__name__)
+                        choices=d_short_names.keys(),
+                        default=htd_validate.validators.TreeDecompositionValidator.short_name())
 
     required = parser.add_argument_group('required arguments')
     required.add_argument('-g', '--hypergraph', dest='graph_filename', action='store', required=True,
-                        type=lambda x: is_valid_file(parser, x),
-                        help='Input dimacs hypergraph file')
+                          type=lambda x: is_valid_file(parser, x),
+                          help='Input dimacs hypergraph file')
     required.add_argument('-d', '--decomposition', dest='decomposition_filename', action='store', required=True,
-                        type=lambda x: is_valid_file(parser, x), help='Input decomposition file')
+                          type=lambda x: is_valid_file(parser, x), help='Input decomposition file')
     args = parser.parse_args()
     return args
 
@@ -90,8 +94,7 @@ def main():
     validator_class_name = args.validator
     graph_filename = args.graph_filename
     decomposition_filename = args.decomposition_filename
-    Validator = getattr(htd_validate.validators, validator_class_name)()
-
+    Validator = d_short_names[validator_class_name]()
     HG = getattr(htd_validate.utils, Validator.graph_type()).from_file(graph_filename)
     Decomp = getattr(htd_validate.decompositions, Validator.decomposition_type()).from_file(decomposition_filename)
     ret = Decomp.validate(HG)

@@ -9,11 +9,11 @@ from htd_validate.utils import Hypergraph
 
 
 class FractionalHypertreeDecomposition(GeneralizedHypertreeDecomposition):
+    _problem_string = 'fhtd'
+
     @staticmethod
     def decomposition_type():
         pass
-
-    _problem_string = 'fhtd'
 
     @staticmethod
     def graph_type():
