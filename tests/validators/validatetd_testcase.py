@@ -15,16 +15,20 @@ class ValidateTDTestCase(unittest.TestCase):
     _td_classname = "TreeDecomposition"
     _gr_classname = "Graph"
 
-    def assertFromFiles(self,graph_file, td_file, assertTrue=True):
-        hg = getattr(htd_validate.utils, self.__class__._gr_classname).from_file(graph_file)
-        if assertTrue not in [True, False]:
+    def assertFromFiles(self, graph_file, td_file, assertion=True, strict=False):
+        if assertion not in [True, False]:
             with self.assertRaises(SystemExit):
-                decomp = getattr(htd_validate.decompositions, self.__class__._td_classname).from_file(td_file, True)
-                self.assertEqual(assertTrue, decomp.validate(hg),
-                                 "td validation result wrong, should be: " + str(assertTrue) + " in: " + td_file)
+                hg = getattr(htd_validate.utils, self.__class__._gr_classname).from_file(graph_file)
+                decomp = getattr(htd_validate.decompositions, self.__class__._td_classname).from_file(filename=td_file,
+                                                                                                      strict=strict)
+                self.assertEqual(assertion, decomp.validate(hg),
+                                 "td validation result wrong, should be: %s in: %s" % (assertion, td_file))
         else:
-            decomp = getattr(htd_validate.decompositions, self.__class__._td_classname).from_file(td_file, True)
-            self.assertEqual(assertTrue, decomp.validate(hg), "td validation result wrong, should be: " + str(assertTrue) + " in: " + td_file)
+            hg = getattr(htd_validate.utils, self.__class__._gr_classname).from_file(graph_file)
+            decomp = getattr(htd_validate.decompositions, self.__class__._td_classname).from_file(filename=td_file,
+                                                                                                  strict=strict)
+            self.assertEqual(assertion, decomp.validate(hg),
+                             "td validation result wrong, should be: %s in: %s" % (assertion, td_file))
 
     def setUp(self):
         pass
@@ -32,10 +36,8 @@ class ValidateTDTestCase(unittest.TestCase):
     def tearDown(self):
         pass
 
-    def validateFolder(self, folder, assertTrue=True):
-        #print self.__class__.__name__
+    def validateFolder(self, folder, assertion=True, strict=False):
         graph = None
-        #print str(Path.cwd().iterdir())
         folder = os.path.dirname(os.path.realpath(__file__)) + "/" + self.__class__._td + "/" + folder + "/"
         print("checking folder: ", folder)
         for subdir, dirs, files in os.walk(folder):
@@ -49,6 +51,5 @@ class ValidateTDTestCase(unittest.TestCase):
                         self.assertEqual(False, True, "graph file missing for td file: " + file)
                     else:
                         print("testing: ", graph, file)
-                        #print("testing: ", graph, file)
-                        self.assertFromFiles(folder+graph, folder+file, assertTrue)
+                        self.assertFromFiles(folder + graph, folder + file, assertion, strict)
                     graph = None

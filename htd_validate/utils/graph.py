@@ -100,8 +100,8 @@ class Graph(nx.Graph):
                     if header_only:
                         return num_verts, num_edges
                     if num_verts == 0:
-                        logging.error("Empty graph. Exiting.")
-                        exit(2)
+                        logging.warning("Empty graph.")
+                        return graph
 
                 elif line[0] != 'c':
                     if is_dimacs:

@@ -1,8 +1,6 @@
 import logging
-import subprocess
-import sys
 import traceback
-from tempfile import NamedTemporaryFile
+from collections import Counter
 
 import networkx as nx
 from cStringIO import StringIO
@@ -15,8 +13,10 @@ from htd_validate.utils import Graph
 
 
 class TreeDecomposition(Decomposition):
-    @staticmethod
-    def graph_type():
+    _problem_string = 'td'
+
+    @classmethod
+    def graph_type(cls):
         return Graph.__name__
 
     def __init__(self, plot_if_td_invalid=False):
@@ -26,8 +26,9 @@ class TreeDecomposition(Decomposition):
         return len(self.bags)
 
     @staticmethod
-    def from_file(filename, enforceStrict=False):
+    def from_file(filename, strict=False):
         """
+        :param strict: strictly enforce PACE requirements for the input format (pace specs are unnecessarily strict)
         :param filename:
         :rtype: TreeDecomposition
         :return:
@@ -38,8 +39,10 @@ class TreeDecomposition(Decomposition):
             try:
                 header_seen = False
                 edge_seen = False
+                nr = 0
                 for line in fobj.readlines():
                     line = line.split()
+                    nr = nr + 1
                     # noinspection PySimplifyBooleanCheck
                     if line == []:
                         continue
@@ -50,32 +53,40 @@ class TreeDecomposition(Decomposition):
                         continue
                     elif line[0] == 's' and line[1] == 'td':
                         if header_seen:
-                            logging.critical('Duplicate header. Exiting...')
+                            logging.critical('L(%s). Duplicate header. Exiting...' % nr)
                             exit(2)
                         try:
                             num_bags, td_max_bag_size, num_vertices = map(int, line[2:])
                         except ValueError, e:
                             logging.error(e)
-                            logging.critical('Too many or too few arguments in header. Exiting...')
+                            logging.critical('L(%s). Too many or too few arguments in header. Exiting...' % nr)
                             exit(2)
                         header_seen = True
                     elif line[0] == 'b':
                         if not header_seen:
-                            logging.critical('Bag before header. Exiting...')
+                            logging.critical('L(%s). Bag before header. Exiting...' % nr)
                             exit(2)
-                        if enforceStrict and len(line) < 2: return TreeDecomposition()
+                        if strict and edge_seen:
+                            logging.error('L(%s). Edge before bag. Exiting...' % nr)
+                            exit(2)
+                        if len(line) < 2:
+                            logging.critical('L(%s). Some bag has no index. Exiting...' % nr)
+                            exit(1)
+                        if strict and len(line) < 3:
+                            logging.error('L(%s). Empty bag. Exiting...' % nr)
+                            exit(2)
+                        # if not strict and len(line) < 2:
+                        #     continue
                         bag_name = int(line[1])
                         if td.bags.has_key(bag_name):
-                            logging.critical('Duplicate bag. Exiting...')
+                            logging.critical('L(%s). Duplicate bag. Exiting...' % nr)
                             exit(2)
+                        # TODO: implement type checking for htd|fhtd
                         td.bags[bag_name] = set(map(int, line[2:]))
                         td.tree.add_node(bag_name)
-                        if edge_seen:
-                            logging.critical('Edge before bag. Exiting...')
-                            exit(2)
                     else:
-                        if not header_seen:
-                            logging.critical('Edge before header. Exiting...')
+                        if strict and not header_seen:
+                            logging.error('L(%s). Edge before header. Exiting...' % nr)
                             exit(2)
                         u, v = map(int, line)
                         td.tree.add_edge(u, v)
@@ -95,21 +106,21 @@ class TreeDecomposition(Decomposition):
             if len(td) == 1:
                 # noinspection PyUnresolvedReferences
                 td.tree.add_node(td.bags.iterkeys().next())
-            if len(td) != num_bags:
-                sys.stderr.write('WARNING: Number of bags differ. Was %s expected %s.\n' % (len(td), num_bags))
-                if enforceStrict: return TreeDecomposition()
-                exit(2)
-            if len(set(chain.from_iterable(td.bags.itervalues()))) != num_vertices:
-                sys.stderr.write(
-                    'WARNING: Number of vertices differ. Was %s expected %s.\n' % (
-                        td.tree.number_of_nodes(), num_vertices))
-                if enforceStrict: return TreeDecomposition()
-                exit(2)
             if td.max_bag_size() != td_max_bag_size:
-                sys.stderr.write(
-                    'WARNING: Number of vertices differ. Was %s expected %s.\n' % (
-                        td.max_bag_size(), td_max_bag_size))
-                if enforceStrict: return TreeDecomposition()
+                logging.critical(
+                    'Bag Size does not match the header was %s expected %s.\n' % (td.max_bag_size(), td_max_bag_size))
+                exit(2)
+            if len(td) != num_bags:
+                logging.critical('Number of bags differ. Was %s expected %s.\n' % (len(td), num_bags))
+                exit(2)
+            if td.num_vertices > num_vertices:
+                logging.critical(
+                    'Number of vertices differ (>). Was %s expected %s.\n' % (td.num_vertices, num_vertices))
+                exit(2)
+            print strict
+            if td.num_vertices < num_vertices and strict:
+                logging.warning(
+                    'Number of vertices differ (<). Was %s expected %s.\n' % (td.num_vertices, num_vertices))
                 exit(2)
         return td
 
@@ -165,23 +176,6 @@ class TreeDecomposition(Decomposition):
         root_id = lengths.index(max_bag_size)
         return bagids2lengths.keys()[root_id]
 
-    def relabeled_decomposition(self, offset, vertex_mapping, inplace=False):
-        if inplace:
-            raise NotImplementedError("Not implemented yet.")
-        offset += 1
-        tree_mapping = {org_id: id for id, org_id in izip(count(start=offset), self.tree.nodes_iter())}
-        new_bags = {}
-        for i in xrange(offset, offset + len(self.tree.nodes())):
-            new_bags[i] = self.bags[self.tree.nodes()[i - offset]]
-        ret_tree = nx.relabel_nodes(self.tree, tree_mapping, copy=False)
-        # relabeled_decomposition the contents of the bags according to mapping
-        inv_mapping = dict(imap(reversed, vertex_mapping.items()))
-        for key, bag in new_bags.iteritems():
-            new_bags[key] = set(map(lambda x: inv_mapping[x], bag))
-        # TODO: refactor
-        return TreeDecomposition(tree=ret_tree, bags=new_bags, temp_path=self.temp_path, delete_temp=self.delete_temp,
-                                 plot_if_td_invalid=self.plot_if_td_invalid)
-
     def show(self, layout, nolabel=0):
         """ show hypergraph
         layout 1:graphviz,
@@ -227,29 +221,6 @@ class TreeDecomposition(Decomposition):
             nx.draw(m, pos)
             plt.show()
 
-    def simplify(self):
-        node = iter(self.tree.nodes())
-        while True:
-            try:
-                i = next(node)
-                neigh_list = set(self.tree[i])
-                for neigh in self.tree[i]:
-                    if self.bags[i].issubset(self.bags[neigh]):
-                        for neigh1 in neigh_list - set([neigh]):
-                            self.tree.add_edge(neigh, neigh1)
-                        self.tree.remove_node(i)
-                        del self.bags[i]
-                        break
-            except StopIteration:
-                break
-        if self.always_validate:
-            self.validate2()
-
-
-class TrivialTreeDecomposition(TreeDecomposition):
-    def __init__(self):
-        super(TrivialTreeDecomposition, self).__init__()
-
-    def from_graph(self, graph):
-        self.bags = {1: graph.nodes()}
-        self.tree.add_node(1)
+    @property
+    def num_vertices(self):
+        return len(set(chain.from_iterable(self.bags.itervalues())))

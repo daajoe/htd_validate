@@ -30,8 +30,9 @@ class GeneralizedHypertreeDecomposition(Decomposition):
     # TODO: merge with td
     # TODO: syntax check for htd|ghtd|fhtd
     @classmethod
-    def from_file(cls, filename, enforceStrict=False):
+    def from_file(cls, filename, strict=False):
         """
+        :param strict: strictly enforce PACE requirements for the input format (pace specs are unnecessarily strict)
         :param filename:
         :rtype: TreeDecomposition
         :return:
@@ -50,12 +51,19 @@ class GeneralizedHypertreeDecomposition(Decomposition):
                         logging.warning('%s' % ' '.join(line))
                         logging.warning('-' * 80)
                         continue
-                    elif line[0] == 's' and line[1] == cls._problem_string:
-                        num_bags, max_function_value, num_vertices, num_hyperedges = map(int, line[2:])
+                    elif line[0] == 's':
+                        if line[1] == cls._problem_string:
+                            num_bags, max_function_value, num_vertices, num_hyperedges = map(int, line[2:])
+                        else:
+                            logging.critical(
+                                'Decomposition (expected: %s) and decomposition type in file (was: %s) do not match. Exiting...' % (
+                                cls._problem_string, line[1]))
+                            exit(2)
                     elif line[0] == 'b':
                         bag_name = int(line[1])
                         decomp.bags[bag_name] = set(map(int, line[2:]))
                         decomp.tree.add_node(bag_name)
+                    # todo: additional properties
                     elif line[0] == 'w':
                         decomp.hyperedge_function[int(line[1])][int(line[2])] = int(line[3])
                     else:
@@ -182,3 +190,7 @@ class GeneralizedHypertreeDecomposition(Decomposition):
             weight.append(sum(self.hyperedge_function[t].itervalues()))
         logging.info("Width is '%s'." % max(weight))
         return max(weight)
+
+    @property
+    def problem_string(self):
+        return self._problem_string
