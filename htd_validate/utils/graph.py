@@ -17,14 +17,16 @@
 #
 from __future__ import print_function
 
+import gzip
 import logging
 
-from cStringIO import StringIO
-import gzip
 from bz2 import BZ2File
+from cStringIO import StringIO
 from itertools import count, izip
+
 try:
     import backports.lzma as xz
+
     xz = True
 except ImportError:
     xz = False
@@ -45,26 +47,26 @@ class Graph(nx.Graph):
         self.val = val
 
     @classmethod
-    def from_file(clazz, filename):
+    def from_file(clazz, filename, strict=False):
         """
         :param filename: name of the file to read from
         :type filename: string
         :rtype: Graph
         :return: a list of edges and number of vertices
         """
-        return clazz._from_file(filename)
+        return clazz._from_file(filename, strict=strict)
 
     @staticmethod
-    def dimacs_header(filename):
+    def dimacs_header(filename, strict):
         """
         :param filename: name of the file to read from
         :type filename: string
         :return: a list of edges and number of vertices
         """
-        return Graph._from_file(filename, header_only=True)
+        return Graph._from_file(filename, header_only=True, strict=strict)
 
     @classmethod
-    def _from_file(clazz, filename, header_only=False):
+    def _from_file(clazz, filename, header_only=False, strict=False):
         """
         :param filename: name of the file to read from
         :type filename: string
@@ -89,11 +91,20 @@ class Graph(nx.Graph):
                 stream = xz.open(filename, 'r')
             else:
                 raise IOError('Unknown input type "%s" for file "%s"' % (mtype, filename))
+            nr = 0
+            header_seen = False
             for line in stream:
+                nr += 1
                 line = line.split()
                 if line == [] or line[0] in ('x', 'n'):
                     continue
                 elif line[0] == 'p':
+                    if header_seen:
+                        logging.critical('L(%s). Duplicate header. Exiting.' % nr)
+                        exit(3)
+                    if len(line) > 4:
+                        logging.critical('L(%s). Too many arguments. Exiting.' % nr)
+                        exit(3)
                     is_dimacs = line[1] == 'edge'
                     num_verts = int(line[2])
                     num_edges = int(line[3])
@@ -102,20 +113,40 @@ class Graph(nx.Graph):
                     if num_verts == 0:
                         logging.warning("Empty graph.")
                         return graph
-
+                    header_seen = True
                 elif line[0] != 'c':
-                    if is_dimacs:
-                        graph.add_edge(int(line[1]), int(line[2]))
-                    else:
-                        graph.add_edge(int(line[0]), int(line[1]))
+                    if not header_seen:
+                        logging.critical('L(%s). Lines before header. Exiting.' % nr)
+                        exit(3)
+                    try:
+                        if is_dimacs:
+                            graph.add_edge(int(line[1]), int(line[2]))
+                        else:
+                            graph.add_edge(int(line[0]), int(line[1]))
+                    except ValueError, e:
+                        logging.critical('L(%s). Invalid integer. Exiting.' % nr)
+                        logging.critical('Error was: %s' % e)
+                        exit(3)
+                    except IndexError, e:
+                        logging.critical('L(%s). Incomplete edge. Exiting' % nr)
+                        logging.critical('Error was: %s' % e)
+                        exit(3)
         finally:
             if stream:
                 stream.close()
 
-        if graph.number_of_edges() < num_edges:
-            logging.error("edges missing: read=%s announced=%s" % (graph.number_of_edges(), num_edges))
-        if graph.number_of_nodes() < num_verts:
-            logging.error("vertices missing: read=%s announced=%s" % (graph.number_of_edges(), num_edges))
+        if graph.number_of_edges() > num_edges:
+            logging.error("Edges overmuch: read=%s expected=%s" % (graph.number_of_edges(), num_edges))
+            exit(3)
+        if strict and graph.number_of_edges() < num_edges:
+            logging.error("Edges missing: read=%s expected=%s" % (graph.number_of_edges(), num_edges))
+            exit(3)
+        if graph.number_of_nodes() > num_verts:
+            logging.error("Vertices overmuch: read=%s expected=%s" % (graph.number_of_nodes(), num_verts))
+            exit(3)
+        if strict and graph.number_of_nodes() < num_verts:
+            logging.error("Vertices missing: read=%s expected=%s" % (graph.number_of_nodes(), num_verts))
+            exit(3)
         return graph
 
     def write_dimacs(self, stream, copy=True):
