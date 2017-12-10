@@ -1,13 +1,21 @@
 import logging
+import os
+import traceback
 from collections import defaultdict
 
 import networkx as nx
 from cStringIO import StringIO
+from itertools import chain
 
 
-# python: check abstract class
 class Decomposition(object):
     _problem_string = 'missing'
+    _data_type = int
+
+    def __new__(cls, *args, **kwargs):
+        if cls is Decomposition:
+            raise TypeError("base class may not be instantiated")
+        return object.__new__(cls, *args, **kwargs)
 
     def __init__(self):
         self.tree = nx.DiGraph()
@@ -18,11 +26,126 @@ class Decomposition(object):
     def graph_type():
         raise NotImplementedError("abstract method -- subclass must override")
 
+    def __len__(self):
+        return len(self.bags)
+
+    @classmethod
+    def from_file(cls, filename, strict=False):
+        """
+        :param strict: strictly enforce PACE requirements for the input format (pace specs are unnecessarily strict)
+        :param filename:
+        :rtype: TreeDecomposition
+        :return:
+        """
+        header_seen = False
+        nr = 0
+
+        def log_critical(string):
+            logging.critical('%s:L(%s). %s  Exiting...' % (os.path.basename(filename), nr, string))
+
+        td = cls()
+        with open(filename, 'r') as fobj:
+            num_bags = num_vertices = 0
+            additional_header = {}
+            try:
+                edge_seen = False
+                for line in fobj.readlines():
+                    line = line.split()
+                    nr = nr + 1
+                    # noinspection PySimplifyBooleanCheck
+                    if line == []:
+                        continue
+                    if line[0] == 'c':
+                        logging.info('-' * 20 + 'INFO from decomposition reader' + '-' * 20)
+                        logging.info('%s' % ' '.join(line))
+                        logging.info('-' * 80)
+                        continue
+                    elif line[0] == 's' and line[1] == cls._problem_string:
+                        if header_seen:
+                            log_critical('Duplicate header.')
+                            exit(2)
+                        try:
+                            num_bags = int(line[2])
+                            num_vertices = int(line[4])
+                            additional_header = cls._read_header(line)
+                        except ValueError as e:
+                            logging.error(e)
+                            log_critical('Too many or too few arguments in header.')
+                            exit(2)
+                        header_seen = True
+                    elif line[0] == 'b':
+                        if not header_seen:
+                            log_critical('Bag before header.')
+                            exit(2)
+                        if strict and edge_seen:
+                            log_critical('Edge before bag.')
+                            exit(2)
+                        if len(line) < 2:
+                            log_critical('Some bag has no index.')
+                            exit(1)
+                        if strict and len(line) < 3:
+                            log_critical('Empty bag.')
+                            exit(2)
+                        bag_name = int(line[1])
+                        if td.bags.has_key(bag_name):
+                            log_critical('Duplicate bag.')
+                            exit(2)
+                        # TODO: implement type checking for htd|fhtd
+                        try:
+                            td.bags[bag_name] = set(map(cls._data_type, line[2:]))
+                        except ValueError as e:
+                            log_critical("Type checking failed (expected %s)." % (cls._data_type))
+                            logging.critical("Full exception %s." % e)
+                            exit(2)
+                        td.tree.add_node(bag_name)
+                    else:
+                        if cls._reader(line):
+                            continue
+                        else:
+                            if strict and not header_seen:
+                                log_critical('Edge before header.')
+                                exit(2)
+                            u, v = map(int, line)
+                            td.tree.add_edge(u, v)
+                            edge_seen = True
+            except ValueError as e:
+                logging.critical("Undefined input.")
+                logging.critical(e)
+                logging.warning("Output was:")
+                fobj.seek(0)
+                for line in fobj.readlines():
+                    logging.warning(line)
+                for line in traceback.format_exc().split('\n'):
+                    logging.critical(line)
+                logging.critical('Exiting...')
+                exit(143)
+            # decomps of single bags require special treatment
+            if not header_seen:
+                logging.critical('Missing header. Exiting...')
+                exit(2)
+            if len(td) == 1:
+                # noinspection PyUnresolvedReferences
+                td.tree.add_node(td.bags.iterkeys().next())
+            if td.specific_valiation(td, additional_header):
+                logging.critical('Decomposition specific validation failed.')
+                exit(2)
+            if len(td) != num_bags:
+                logging.critical('Number of bags differ. Was %s expected %s.\n' % (len(td), num_bags))
+                exit(2)
+            if td.num_vertices > num_vertices:
+                logging.critical(
+                    'Number of vertices differ (>). Was %s expected %s.\n' % (td.num_vertices, num_vertices))
+                exit(2)
+            if td.num_vertices < num_vertices and strict:
+                logging.warning(
+                    'Number of vertices differ (<). Was %s expected %s.\n' % (td.num_vertices, num_vertices))
+                exit(2)
+        return td
+
     def edges_covered(self):
         # initialise with edges
-        #TODO: something missing here
+        # TODO: something missing here
         covered_edges = {e: False for e in self.hypergraph.edges_iter()}
-        # print covered_edges, self.bags
         for e in self.hypergraph.edges_iter():
             if not any(set(e) <= bag for bag in self.bags.itervalues()):
                 logging.error('Edge "%s" is not covered in any bag.' % str(e))
@@ -60,3 +183,19 @@ class Decomposition(object):
                 logging.error('End Adjacency Matrix')
                 return False
         return True
+
+    @property
+    def num_vertices(self):
+        return len(set(chain.from_iterable(self.bags.itervalues())))
+
+    @staticmethod
+    def specific_valiation(td, problem_statement):
+        raise NotImplementedError("abstract method -- subclass must override")
+
+    @staticmethod
+    def _reader(line):
+        raise NotImplementedError("abstract method -- subclass must override")
+
+    @staticmethod
+    def _read_header(line):
+        raise NotImplementedError("abstract method -- subclass must override")

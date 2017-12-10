@@ -10,6 +10,7 @@ from htd_validate.utils import Hypergraph
 
 class FractionalHypertreeDecomposition(GeneralizedHypertreeDecomposition):
     _problem_string = 'fhtd'
+    _data_type = float
 
     @staticmethod
     def decomposition_type():
