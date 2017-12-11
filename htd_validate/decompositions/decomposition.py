@@ -43,10 +43,10 @@ class Decomposition(object):
         def log_critical(string):
             logging.critical('%s:L(%s). %s  Exiting...' % (os.path.basename(filename), nr, string))
 
-        td = cls()
+        decomp = cls()
         with open(filename, 'r') as fobj:
             num_bags = num_vertices = 0
-            additional_header = {}
+            header = {}
             try:
                 edge_seen = False
                 for line in fobj.readlines():
@@ -65,9 +65,9 @@ class Decomposition(object):
                             log_critical('Duplicate header.')
                             exit(2)
                         try:
-                            num_bags = int(line[2])
-                            num_vertices = int(line[4])
-                            additional_header = cls._read_header(line)
+                            header['num_bags'] = int(line[2])
+                            header['num_vertices'] = int(line[4])
+                            header.update(cls._read_header(line))
                         except ValueError as e:
                             logging.error(e)
                             log_critical('Too many or too few arguments in header.')
@@ -87,26 +87,40 @@ class Decomposition(object):
                             log_critical('Empty bag.')
                             exit(2)
                         bag_name = int(line[1])
-                        if td.bags.has_key(bag_name):
+                        if decomp.bags.has_key(bag_name):
                             log_critical('Duplicate bag.')
                             exit(2)
                         # TODO: implement type checking for htd|fhtd
                         try:
-                            td.bags[bag_name] = set(map(cls._data_type, line[2:]))
+                            decomp.bags[bag_name] = set(map(cls._data_type, line[2:]))
                         except ValueError as e:
-                            log_critical("Type checking failed (expected %s)." % (cls._data_type))
+                            log_critical("Type checking failed (expected %s)." % cls._data_type)
                             logging.critical("Full exception %s." % e)
                             exit(2)
-                        td.tree.add_node(bag_name)
+                        decomp.tree.add_node(bag_name)
                     else:
-                        if cls._reader(line):
+                        if cls._reader(decomp, line):
                             continue
                         else:
                             if strict and not header_seen:
                                 log_critical('Edge before header.')
                                 exit(2)
                             u, v = map(int, line)
-                            td.tree.add_edge(u, v)
+                            if u > header['num_bags']:
+                                log_critical("Edge label %s out of bounds (expected max %s bags)." %(u,num_bags))
+                                exit(2)
+                            if v > header['num_bags']:
+                                log_critical("Edge label %s out of bounds (expected max %s bags)." %(v,num_bags))
+                                exit(2)
+                            if u not in decomp.bags.keys():
+                                log_critical(
+                                    "Edge in the tree (%s,%s) without a corresponding bag for node %s." % (u, v, u))
+                                exit(2)
+                            if v not in decomp.bags.keys():
+                                log_critical(
+                                    "Edge in the tree (%s,%s) without a corresponding bag for node %s." % (u, v, v))
+                                exit(2)
+                            decomp.tree.add_edge(u, v)
                             edge_seen = True
             except ValueError as e:
                 logging.critical("Undefined input.")
@@ -123,24 +137,24 @@ class Decomposition(object):
             if not header_seen:
                 logging.critical('Missing header. Exiting...')
                 exit(2)
-            if len(td) == 1:
+            if len(decomp) == 1:
                 # noinspection PyUnresolvedReferences
-                td.tree.add_node(td.bags.iterkeys().next())
-            if td.specific_valiation(td, additional_header):
+                decomp.tree.add_node(decomp.bags.iterkeys().next())
+            if decomp.specific_valiation(decomp, header):
                 logging.critical('Decomposition specific validation failed.')
                 exit(2)
-            if len(td) != num_bags:
-                logging.critical('Number of bags differ. Was %s expected %s.\n' % (len(td), num_bags))
+            if len(decomp) != header['num_bags']:
+                logging.critical('Number of bags differ. Was %s expected %s.\n' % (len(decomp), header['num_bags']))
                 exit(2)
-            if td.num_vertices > num_vertices:
+            if decomp.num_vertices > header['num_vertices']:
                 logging.critical(
-                    'Number of vertices differ (>). Was %s expected %s.\n' % (td.num_vertices, num_vertices))
+                    'Number of vertices differ (>). Was %s expected %s.\n' % (decomp.num_vertices, header['num_vertices']))
                 exit(2)
-            if td.num_vertices < num_vertices and strict:
+            if decomp.num_vertices < header['num_vertices'] and strict:
                 logging.warning(
-                    'Number of vertices differ (<). Was %s expected %s.\n' % (td.num_vertices, num_vertices))
+                    'Number of vertices differ (<). Was %s expected %s.\n' % (decomp.num_vertices, num_vertices))
                 exit(2)
-        return td
+        return decomp
 
     def edges_covered(self):
         # initialise with edges
@@ -193,7 +207,7 @@ class Decomposition(object):
         raise NotImplementedError("abstract method -- subclass must override")
 
     @staticmethod
-    def _reader(line):
+    def _reader(decomp, line):
         raise NotImplementedError("abstract method -- subclass must override")
 
     @staticmethod

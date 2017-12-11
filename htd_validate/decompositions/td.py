@@ -29,8 +29,8 @@ class TreeDecomposition(Decomposition):
         return ret
 
     @staticmethod
-    def _reader(line):
-        pass
+    def _reader(decomp, line):
+        return False
 
     @staticmethod
     def specific_valiation(td, problem_statement):

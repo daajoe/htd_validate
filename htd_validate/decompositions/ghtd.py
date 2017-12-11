@@ -1,10 +1,9 @@
 import logging
-import traceback
 from collections import defaultdict
 
 import networkx as nx
 from cStringIO import StringIO
-from itertools import count, imap, chain, izip
+from itertools import count, imap, izip
 from operator import itemgetter
 
 from htd_validate.decompositions import Decomposition
@@ -26,91 +25,41 @@ class GeneralizedHypertreeDecomposition(Decomposition):
     def __len__(self):
         return len(self.bags)
 
+    @staticmethod
+    def _read_header(line):
+        ret = {'max_function_value': int(line[3]),
+               'num_vertices': int(line[4]),
+               'num_hyperedges': int(line[5])}
+
+        if len(line) > 6:
+            logging.critical('Header contained too many parameters. Exiting...')
+            exit(2)
+        return ret
+
+    @staticmethod
+    def _reader(decomp, line):
+        if line[0] == 'w':
+            decomp.hyperedge_function[int(line[1])][int(line[2])] = int(line[3])
+            return True
+        return False
+
+    @staticmethod
+    def specific_valiation(decomp, header):
+        print header
+        if len(decomp.hyperedge_function) != header['max_function_value']:
+            logging.error(
+                'Missing function mapping for node %s of the tree. Expected %s \n' % (
+                    len(decomp.hyperedge_function), header['max_function_value']))
+            exit(2)
+        if len(decomp.hyperedge_function) != header['max_function_value']:
+            logging.error(
+                'Missing function mapping for node %s of the tree. Expected %s \n' % (
+                    len(decomp.hyperedge_function), header['max_function_value']))
+            exit(2)
+
     # TODO: detect format from file header
     # TODO: merge with td
     # TODO: syntax check for htd|ghtd|fhtd
-    @classmethod
-    def from_file(cls, filename, strict=False):
-        """
-        :param strict: strictly enforce PACE requirements for the input format (pace specs are unnecessarily strict)
-        :param filename:
-        :rtype: TreeDecomposition
-        :return:
-        """
-        decomp = cls()
-        with open(filename, 'r') as fobj:
-            num_bags = max_function_value = num_vertices = 0
-            try:
-                for line in fobj.readlines():
-                    line = line.split()
-                    # noinspection PySimplifyBooleanCheck
-                    if line == []:
-                        continue
-                    if line[0] == 'c':
-                        logging.warning('-' * 20 + 'INFO from decomposition reader' + '-' * 20)
-                        logging.warning('%s' % ' '.join(line))
-                        logging.warning('-' * 80)
-                        continue
-                    elif line[0] == 's':
-                        if line[1] == cls._problem_string:
-                            num_bags, max_function_value, num_vertices, num_hyperedges = map(int, line[2:])
-                        else:
-                            logging.critical(
-                                'Decomposition (expected: %s) and decomposition type in file (was: %s) do not match. Exiting...' % (
-                                cls._problem_string, line[1]))
-                            exit(2)
-                    elif line[0] == 'b':
-                        bag_name = int(line[1])
-                        decomp.bags[bag_name] = set(map(int, line[2:]))
-                        decomp.tree.add_node(bag_name)
-                    # todo: additional properties
-                    elif line[0] == 'w':
-                        decomp.hyperedge_function[int(line[1])][int(line[2])] = int(line[3])
-                    else:
-                        u, v = map(int, line)
-                        if u not in decomp.bags.keys():
-                            logging.error(
-                                "ERROR (reading decomposition): Edge in the tree (%s,%s) without a corresponding bag "
-                                "for node %s." % (
-                                    u, v, u))
-                        if v not in decomp.bags.keys():
-                            logging.error(
-                                "ERROR (reading decomposition): Edge in the tree (%s,%s) without a corresponding bag "
-                                "for node %s." % (
-                                    u, v, v))
-                        decomp.tree.add_edge(u, v)
-            except ValueError as e:
-                logging.critical("Undefined input.")
-                logging.critical(e)
-                logging.warning("Output was:")
-                fobj.seek(0)
-                for line in fobj.readlines():
-                    logging.warning(line)
-                for line in traceback.format_exc().split('\n'):
-                    logging.critical(line)
-                logging.critical('Exiting...')
-                exit(143)
-            # decomps of single bags require special treatment
-            if len(decomp) == 1:
-                # noinspection PyUnresolvedReferences
-                decomp.tree.add_node(decomp.bags.iterkeys().next())
-            if len(decomp.hyperedge_function) != num_bags:
-                logging.error(
-                    'ERROR (reading decomposition): Missing function mapping for some node of the tree. '
-                    'Was %s expected %s \n' % (
-                        len(decomp.hyperedge_function), num_bags))
-            if len(decomp) != num_bags:
-                logging.error('ERROR (reading decomposition): Number of bags differ. Was %s expected %s.\n' % (
-                    len(decomp), num_bags))
-            if len(set(chain.from_iterable(decomp.bags.itervalues()))) != num_vertices:
-                logging.error(
-                    'ERROR (reading decomposition): Number of vertices differ. Was %s expected %s.\n' % (
-                        decomp.tree.number_of_nodes(), num_vertices))
-            if decomp.width() != max_function_value:
-                logging.error(
-                    'ERROR (reading decomposition): Bag size differs. Was %s expected %s.\n' % (
-                        decomp.width(), max_function_value))
-        return decomp
 
     @staticmethod
     def restricted_mapping(mydict, keys):
