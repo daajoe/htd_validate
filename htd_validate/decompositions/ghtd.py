@@ -140,7 +140,7 @@ class GeneralizedHypertreeDecomposition(Decomposition):
         return string.getvalue()
 
     def width(self):
-        weight = []
+        weight = [0]    #special case for the empty graph
         for t in self.tree.nodes_iter():
             weight.append(sum(self.hyperedge_function[t].itervalues()))
         logging.info("Width is '%s'." % max(weight))
