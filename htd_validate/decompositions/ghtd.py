@@ -27,6 +27,10 @@ class GeneralizedHypertreeDecomposition(Decomposition):
 
     @staticmethod
     def _read_header(line):
+        if len(line) < 6:
+            logging.critical('Header contained too little parameters. Exiting...')
+            exit(2)
+
         ret = {'max_function_value': int(line[3]),
                'num_vertices': int(line[4]),
                'num_hyperedges': int(line[5])}
@@ -56,6 +60,10 @@ class GeneralizedHypertreeDecomposition(Decomposition):
                     logging.error(
                         'Missing function mapping for node %s of the tree. Missing for edge %s \n' % (b, e))
                     exit(2)
+        if header['max_function_value'] != decomp.width():
+            logging.error(
+                'Given width is wrong. Computed width %s, given width %s \n' % (decomp.width(), header['max_function_value']))
+            exit(2)
 
     # TODO: detect format from file header
     # TODO: syntax check for htd|ghtd|fhtd
