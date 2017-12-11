@@ -1,4 +1,4 @@
-c This file describes a generalized hypertree decomposition with 5 bags, width 2
+c This file describes a hypertree decomposition with 5 bags, width 2
 c for a hypergraph with 5 vertices and 5 hyperedges
 s htd 5 2 5 5
 b 1 1 2 3
@@ -10,17 +10,17 @@ b 5 5 1 2
 2 3
 3 4
 4 5
-w 1 1 1
+w 1 1 0
 w 1 2 0
-w 1 3 0
+w 1 3 1
 w 1 4 0
-w 1 5 0
+w 1 5 1
 c
-w 2 1 1
-w 2 2 1
-w 2 3 0
+w 2 1 0
+w 2 2 0
+w 2 3 1
 w 2 4 0
-w 2 5 0
+w 2 5 1
 c
 w 3 1 0
 w 3 2 0
