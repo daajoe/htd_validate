@@ -45,22 +45,20 @@ class GeneralizedHypertreeDecomposition(Decomposition):
 
     @staticmethod
     def specific_valiation(decomp, header):
-        print header
-        if len(decomp.hyperedge_function) != header['max_function_value']:
+        if len(decomp.hyperedge_function) != header['num_bags']:
             logging.error(
-                'Missing function mapping for node %s of the tree. Expected %s \n' % (
-                    len(decomp.hyperedge_function), header['max_function_value']))
+                'Too many mappings. Found %s expected %s \n' % (
+                len(decomp.hyperedge_function), header['num_bags']))
             exit(2)
-        if len(decomp.hyperedge_function) != header['max_function_value']:
-            logging.error(
-                'Missing function mapping for node %s of the tree. Expected %s \n' % (
-                    len(decomp.hyperedge_function), header['max_function_value']))
-            exit(2)
+        for b in decomp.bags.iterkeys():
+            for e in xrange(1, header['num_hyperedges']+1):
+                if not decomp.hyperedge_function[b].has_key(e):
+                    logging.error(
+                        'Missing function mapping for node %s of the tree. Missing for edge %s \n' % (b, e))
+                    exit(2)
 
     # TODO: detect format from file header
-    # TODO: merge with td
     # TODO: syntax check for htd|ghtd|fhtd
-
     @staticmethod
     def restricted_mapping(mydict, keys):
         return dict((k, mydict[k]) for k in keys if k in mydict)

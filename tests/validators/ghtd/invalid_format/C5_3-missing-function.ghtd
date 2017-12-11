@@ -9,7 +9,6 @@ b 3 3 4 5
 b 4 1 4 4
 c tree has an edge from nodes 1 to 2
 1 2
-c ...
 2 3
 c in bag 1 we map hyperedge 1 to 0
 w 1 1 0
