@@ -2,4 +2,4 @@ from td import TreeDecompositionValidator
 from ghtd import GeneralizedHypertreeDecompositionValidator
 from htd import HypertreeDecompositionValidator
 from fhtd import FractionalHypertreeDecompositionValidator
-from auto import AutoDecompositionValidator
+#from auto import AutoDecompositionValidator
