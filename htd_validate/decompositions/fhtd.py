@@ -16,6 +16,13 @@ class FractionalHypertreeDecomposition(GeneralizedHypertreeDecomposition):
     def decomposition_type():
         pass
 
+    #@staticmethod
+    #def _reader(decomp, line):
+    #    if line[0] == 'w':
+    #        decomp.hyperedge_function[int(line[1])][int(line[2])] = float(line[3])
+    #        return True
+    #    return False
+
     @staticmethod
     def graph_type():
         return Hypergraph.__name__

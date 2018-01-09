@@ -1,0 +1,19 @@
+c This file describes a hypertree decomposition with 1 bags, width 2
+c for a hypergraph with 5 vertices and 5 hyperedges
+c
+c
+c e 1 2 3
+c e 2 3 4
+c e 3 4 5
+c e 4 5 1
+c e 5 1 2
+c
+s ghtd 1 2 5 5
+b 1 3 4 5 1 2
+c
+w 1 1 1
+w 1 2 0
+w 1 3 1
+w 1 4 0
+w 1 5 0
+c

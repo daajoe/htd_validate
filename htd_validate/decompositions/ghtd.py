@@ -25,13 +25,13 @@ class GeneralizedHypertreeDecomposition(Decomposition):
     def __len__(self):
         return len(self.bags)
 
-    @staticmethod
-    def _read_header(line):
+    @classmethod
+    def _read_header(cls, line):
         if len(line) < 6:
             logging.critical('Header contained too little parameters. Exiting...')
             exit(2)
 
-        ret = {'max_function_value': int(line[3]),
+        ret = {'max_function_value': cls._data_type(line[3]),
                'num_vertices': int(line[4]),
                'num_hyperedges': int(line[5])}
 
@@ -40,10 +40,10 @@ class GeneralizedHypertreeDecomposition(Decomposition):
             exit(2)
         return ret
 
-    @staticmethod
-    def _reader(decomp, line):
+    @classmethod
+    def _reader(cls, decomp, line):
         if line[0] == 'w':
-            decomp.hyperedge_function[int(line[1])][int(line[2])] = int(line[3])
+            decomp.hyperedge_function[int(line[1])][int(line[2])] = cls._data_type(line[3])
             return True
         return False
 

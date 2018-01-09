@@ -91,10 +91,11 @@ class Decomposition(object):
                             log_critical('Duplicate bag.')
                             exit(2)
                         # TODO: implement type checking for htd|fhtd
+                        # TODO: BUT NOT HERE! type checking required in 'w' line ~> _reader
                         try:
-                            decomp.bags[bag_name] = set(map(cls._data_type, line[2:]))
+                            decomp.bags[bag_name] = set(map(int, line[2:]))
                         except ValueError as e:
-                            log_critical("Type checking failed (expected %s)." % cls._data_type)
+                            log_critical("Type checking failed (expected %s)." % int) #cls._data_type)
                             logging.critical("Full exception %s." % e)
                             exit(2)
                         decomp.tree.add_node(bag_name)
