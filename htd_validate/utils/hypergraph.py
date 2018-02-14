@@ -18,10 +18,11 @@
 # License along with hypergraph.py.  If not, see
 # <http://www.gnu.org/licenses/>.
 # from __future__ import print_function
-from cStringIO import StringIO
 import gzip
+
 from bz2 import BZ2File
-from itertools import count, izip
+from cStringIO import StringIO
+from itertools import imap, izip
 
 try:
     import backports.lzma as xz
@@ -31,7 +32,25 @@ except ImportError:
     xz = False
 
 import mimetypes
-import networkx as nx
+
+
+class SymTab:
+    def __init__(self, offset=0):
+        self.__offset = offset
+        self.name2id = {}
+        self.id2name = {}
+
+    def __getitem__(self, key):
+        try:
+            return self.name2id[key]
+        except KeyError:
+            val = self.__offset + len(self.name2id) + 1
+            self.name2id[key] = val
+            self.id2name[val] = key
+            return val
+
+    def get(self, key):
+        return self.__getitem__(key)
 
 
 class Hypergraph(object):
@@ -40,10 +59,8 @@ class Hypergraph(object):
         self.__vertices = set()
         self.__non_numerical = non_numerical
         if self.__non_numerical:
-            self.__tab = dict()
-            self.__id_tab = dict()
-            self.__node_label = dict()
-            self.__edge_label = dict()
+            self.__nsymtab = SymTab()
+            self.__elabel = {}
 
     def number_of_edges(self):
         return len(self.__edges)
@@ -69,12 +86,15 @@ class Hypergraph(object):
         return iter(self.__vertices)
 
     @classmethod
-    def fromstream(clazz, stream):
+    def fromstream_dimacslike(clazz, stream):
+        num_edges = 0
+        num_verts = 0
+
         is_dimacs = False
         HG = clazz()
         for line in stream.readlines():
             line = line.split()
-            if line == []:
+            if not line:
                 continue
             elif line[0] == 'p':
                 is_dimacs = line[1] == 'edge'
@@ -83,23 +103,52 @@ class Hypergraph(object):
                     HG.add_hyperedge(map(int, line[1:]))
                 else:
                     HG.add_hyperedge(map(int, line))
+
+        if HG.number_of_edges() < num_edges:
+            print("edges missing: read=%s announced=%s" % (HG.number_of_edges(), num_edges))
+        if HG.number_of_nodes() < num_verts:
+            print("vertices missing: read=%s announced=%s" % (HG.number_of_edges(), num_edges))
+        return HG
+
+    # TODO: symtab
+
+    @classmethod
+    def fromstream_fischlformat(clazz, stream):
+        HG = clazz(non_numerical=True)
+
+        for line in stream:
+            line = line[:-2]
+            edge_name = None
+            edge_vertices = []
+
+            collect = []
+            for char in line:
+                if char == '(':
+                    edge_name = ''.join(collect)
+                    collect = []
+                elif char == ',' or char == ')':
+                    edge_vertices.append(''.join(collect))
+                    collect = []
+                elif char != ')':
+                    collect.append(char)
+            HG.add_hyperedge(edge_vertices, name=edge_name)
         return HG
 
     # TODO: move from_file to a central part
 
     @classmethod
-    def from_file(clazz, filename):
+    def from_file(clazz, filename, fischl_format=False):
         """
         :param filename: name of the file to read from
         :type filename: string
         :rtype: Graph
         :return: a list of edges and number of vertices
         """
-        return clazz._from_file(filename)
+        return clazz._from_file(filename, fischl_format=fischl_format)
 
     # TODO: check whether we need the header_only option
     @classmethod
-    def _from_file(clazz, filename, header_only=False):
+    def _from_file(clazz, filename, header_only=False, fischl_format=False):
         """
         :param filename: name of the file to read from
         :type filename: string
@@ -109,9 +158,6 @@ class Hypergraph(object):
         """
         if header_only:
             raise NotImplemented
-        num_edges = None
-        num_verts = None
-        is_dimacs = False
         stream = None
         hypergraph = clazz()
         try:
@@ -126,43 +172,33 @@ class Hypergraph(object):
                 stream = xz.open(filename, 'r')
             else:
                 raise IOError('Unknown input type "%s" for file "%s"' % (mtype, filename))
-
-            hypergraph = Hypergraph.fromstream(stream)
+            if fischl_format:
+                hypergraph = Hypergraph.fromstream_fischlformat(stream)
+            else:
+                hypergraph = Hypergraph.fromstream_dimacslike(stream)
         finally:
             if stream:
                 stream.close()
 
-        if hypergraph.number_of_edges() < num_edges:
-            print("edges missing: read=%s announced=%s" % (hypergraph.number_of_edges(), num_edges))
-        if hypergraph.number_of_nodes() < num_verts:
-            print("vertices missing: read=%s announced=%s" % (hypergraph.number_of_edges(), num_edges))
         return hypergraph
 
-    def add_node(self, x, **label):
+    def add_node(self, x):
         if self.__non_numerical:
-            v = self.__vertex_id(x)
-        if label:
-            self.__node_label[v] = label
-        self.__vertices.add(x)
+            v = self.__nsymtab[x]
+        else:
+            v = x
+        self.__vertices.add(v)
         return v
 
-    def add_hyperedge(self, X, label=None):
+    def add_hyperedge(self, X, name=None):
         if self.__non_numerical:
-            X = map(self.__vertex_id, X)
-        if label:
-            self.__edge_label[X] = label
-
-        self.__edges[len(self.__edges) + 1] = tuple(X)
+            X = map(self.__nsymtab.get, X)
+        edge_id = len(self.__edges) + 1
+        if self.__non_numerical and name is not None:
+            self.__elabel[edge_id] = name
+        self.__edges[edge_id] = tuple(X)
         self.__vertices.update(X)
         return X
-
-    # def __vertex_id(self, x):
-    #     if self.__tab.has_key(x):
-    #         return self.__tab[x]
-    #     else:
-    #         self.__tab[x] = len(self.__tab) + 1
-    #         self.__id_tab[self.__tab[x]] = x
-    #         return self.__tab[x]
 
     def edge_iter(self):
         return self.__edges.iterkeys()
@@ -173,23 +209,36 @@ class Hypergraph(object):
     def num_hyperedges(self):
         return len(self.__edges)
 
-    def num_vertices(self):
-        return len(self.__tab)
+    def get_nsymtab(self):
+        return self.__nsymtab
 
-    def get_symtab(self):
-        return self.__tab
+    def write_dimacs(self, stream):
+        return self.write_graph(stream, dimacs=True)
 
-    # def get_edge_labels(self):
-    #     return self.__edge_label
+    def write_gr(self, stream):
+        return self.write_graph(stream, dimacs=False)
 
-    # def get_node_labels(self):
-    #     return self.__node_label
+    def write_graph(self, stream, dimacs=False):
+        """
+        :param stream: stream where to output the hypergraph
+        :type stream: cString
+        :param copy: return a copy of the original hypergraph
+        :type copy: bool
+        :param dimacs: write dimacs header (or gr header)
+        :type dimacs: bool
+        :rtype Graph, dict
+        :return: written hypergraph, remapping of vertices from old hypergraph
+        """
+        gr_string = 'edge' if dimacs else 'htw'
+        s = 'p ' if dimacs else ''
+        stream.write('p %s %s %s\n' % (gr_string, self.number_of_nodes(), self.number_of_edges()))
+        s = 'e ' if dimacs else ''
+        for e_id, nodes in izip(xrange(self.number_of_edges()), self.edges_iter()):
+            nodes = ' '.join(imap(str, nodes))
+            stream.write('%s%s %s\n' % (s, e_id + 1, nodes))
+        stream.flush()
 
-    # def get_node_name(self, x):
-    #     return self.__id_tab[x]
-
-    # def __getitem__(self, x):
-    #     if isinstance(x, tuple):
-    #         return self.get_edge_labels()[x]
-    #     else:
-    #         return self.get_node_labels()[x]
+    def __str__(self):
+        string = StringIO()
+        self.write_gr(string)
+        return string.getvalue()
