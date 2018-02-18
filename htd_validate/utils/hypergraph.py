@@ -60,13 +60,37 @@ class SymTab:
 class Hypergraph(object):
     __d = {}
 
-    def __init__(self, non_numerical=False):
+    def __init__(self, non_numerical=False, vertices=set()):
         self.__edges = dict()
-        self.__vertices = set()
+        self.__vertices = vertices
         self.__non_numerical = non_numerical
         if self.__non_numerical:
             self.__nsymtab = SymTab()
             self.__elabel = {}
+
+    def edge_rank(self, n):
+        return map(lambda x: tuple(x, len(x)), self.adj(n))
+
+    #@staticmethod
+    #def project_edge(e, p):
+    #    return [x for x in e if x not in p]
+
+    def induce_edges(self, es):
+        for e in es:
+            self.add_hyperedge([x for x in e if x in self.__vertices])
+
+    def contract_edge(self, e):
+        dl = -1
+        for (k, v) in self.__edges:
+            contr = [x for x in v if x not in e]
+            if len(contr) > 0:
+                dl = k
+            elif len(contr) < len(v):
+                contr.append(e[0])
+                self.__edges[k] = tuple(contr)
+        if dl >= 0:
+            del self.__edges[dl]
+        self.__vertices -= e
 
     @property
     def adj(self):
@@ -226,6 +250,8 @@ class Hypergraph(object):
         return v
 
     def add_hyperedge(self, X, name=None):
+        if len(X) <= 1:
+            return
         if self.__non_numerical:
             X = map(self.__nsymtab.get, X)
         edge_id = len(self.__edges) + 1

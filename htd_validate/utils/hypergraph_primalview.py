@@ -20,6 +20,7 @@
 # from __future__ import print_function
 import networkx as nx
 from copy import deepcopy
+from hypergraph import Hypergraph
 
 class HypergraphPrimalView(object): #(nx.graph): #https://networkx.github.io/documentation/networkx-1.11/_modules/networkx/classes/graph.html#Graph
 
@@ -38,6 +39,11 @@ class HypergraphPrimalView(object): #(nx.graph): #https://networkx.github.io/doc
     @name.setter
     def name(self, s):
         raise NotImplementedError()
+
+    def induced_graph(self, v):
+        h = Hypergraph(vertices=v)
+        h.induce_edges(self.__hg.edges().values())
+        return HypergraphPrimalView(h)
 
     def __str__(self):
         return str(self.__hg)
