@@ -71,8 +71,8 @@ class Hypergraph(object):
     def edge_rank(self, n):
         return map(lambda x: tuple(x, len(x)), self.adj(n))
 
-    #@staticmethod
-    #def project_edge(e, p):
+    # @staticmethod
+    # def project_edge(e, p):
     #    return [x for x in e if x not in p]
 
     def induce_edges(self, es):
@@ -91,6 +91,13 @@ class Hypergraph(object):
         if dl >= 0:
             del self.__edges[dl]
         self.__vertices -= e
+
+    def incidence_edges(self, v):
+        edges = []
+        for e in self.__edges:
+            if v in self.get_edge(e):
+                edges.append(e)
+        return edges
 
     @property
     def adj(self):
@@ -169,7 +176,7 @@ class Hypergraph(object):
         HG = clazz(non_numerical=True)
 
         for line in stream:
-            line = line[:-2]
+            line = line.replace('\n', '')[:-1]
             edge_name = None
             edge_vertices = []
 
@@ -259,7 +266,7 @@ class Hypergraph(object):
         if self.__non_numerical and name is not None:
             self.__elabel[edge_id] = name
 
-        #remove/avoid already subsets of edges
+        # remove/avoid already subsets of edges
         sx = set(X)
         for e in self.__edges.values():
             if sx.issubset(e):
@@ -318,4 +325,5 @@ class Hypergraph(object):
         self.write_gr(string)
         return string.getvalue()
 
-    def __repr__(self): return self.__str__()
+    def __repr__(self):
+        return self.__str__()
