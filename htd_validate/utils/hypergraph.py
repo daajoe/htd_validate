@@ -33,6 +33,10 @@ except ImportError:
 
 import mimetypes
 
+try:
+    import cplex as cx
+except ImportError:
+    cx = None
 
 class SymTab:
     def __init__(self, offset=0):
@@ -71,6 +75,46 @@ class Hypergraph(object):
     def edge_rank(self, n):
         return map(lambda x: tuple(x, len(x)), self.adj(n))
 
+
+    def fractional_cover(self, n):
+        if cx is None:
+            raise ImportError()
+
+        problem = cx.Cplex()
+        problem.objective.set_sense(problem.objective.sense.minimize)
+
+        names = []
+
+        # coefficients
+        objective = []
+        for e in self.edges():
+            names.append("e{0}".format(e))
+            objective.append(1)
+
+        problem.variables.add(obj=objective,
+                              lb=[0] * len(names),
+                              # ub=upper_bounds,
+                              names=names)
+
+        # constraints
+        constraints = []
+        for k in self.__vertices:
+            constraint = []
+            for e in self.incident_edges(k):
+                constraint.append("e{0}".format(e))
+            if len(constraint) > 0:
+                constraints.append([constraint, [1] * len(constraint)])
+
+        problem.linear_constraints.add(lin_expr=constraints,
+                                       senses=["G"] * len(constraints),
+                                       rhs=[1] * len(constraints),
+                                       names=["c{0}".format(x) for x in names])
+
+        problem.solve()
+        assert(problem.solution.get_status() == 1)
+        return problem.solution.get_objective_value()
+        # print problem.solution.get_values()
+
     # @staticmethod
     # def project_edge(e, p):
     #    return [x for x in e if x not in p]
@@ -92,11 +136,12 @@ class Hypergraph(object):
             del self.__edges[dl]
         self.__vertices -= e
 
-    def incidence_edges(self, v):
-        edges = []
+    def incident_edges(self, v):
+        edges = {}
         for e in self.__edges:
-            if v in self.get_edge(e):
-                edges.append(e)
+            ge = self.get_edge(e)
+            if v in ge:
+                edges[e] = ge
         return edges
 
     def edge_rank(self, n):
@@ -106,22 +151,13 @@ class Hypergraph(object):
     # def project_edge(e, p):
     #    return [x for x in e if x not in p]
 
-    def induce_edges(self, es):
-        for e in es:
-            self.add_hyperedge([x for x in e if x in self.__vertices])
+    #def inc(self,v):
+    #    nbh = dict()
+    #    for e in self.__edges.values():
+    #        if v in e:
+    #            nbh[e] = Hypergraph.__d
+    #    return nbh
 
-    def contract_edge(self, e):
-        dl = -1
-        for (k, v) in self.__edges:
-            contr = [x for x in v if x not in e]
-            if len(contr) > 0:
-                dl = k
-            elif len(contr) < len(v):
-                contr.append(e[0])
-                self.__edges[k] = tuple(contr)
-        if dl >= 0:
-            del self.__edges[dl]
-        self.__vertices -= e
 
     @property
     def adj(self):

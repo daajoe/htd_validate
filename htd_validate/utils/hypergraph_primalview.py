@@ -19,6 +19,7 @@
 # <http://www.gnu.org/licenses/>.
 # from __future__ import print_function
 import networkx as nx
+#import cplex
 from copy import deepcopy
 from hypergraph import Hypergraph
 
@@ -294,6 +295,36 @@ class HypergraphPrimalView(object): #(nx.graph): #https://networkx.github.io/doc
                 #del adj[n]
             except KeyError:
                 pass
+
+    #handle with care!
+    #returns a list of (almost) simplicial vertices per clique
+    #fixme: modify nx.enumerate_all_cliques!
+    def simplicial_iter(self, simplicial_diff=0, clique_sizes_at_least=3, clique_sizes_up_to=5):
+        for clique in nx.enumerate_all_cliques(self):
+            if len(clique) > clique_sizes_up_to:
+                return
+            if clique_sizes_at_least <= len(clique): # <= clique_sizes_up_to:
+                nodes_of_clique = []
+                for c in clique:
+                    if self.degree(c) <= len(clique) + simplicial_diff:
+                        nodes_of_clique.append(c)
+                if len(nodes_of_clique) >= 0:
+                    yield nodes_of_clique
+        # adj = self.__hg.adj
+        # blacklist = set()
+        # for k, a in adj:
+        #     if k not in blacklist and clique_sizes_at_least <= len(a) <= clique_sizes_up_to:
+        #         found = True
+        #         for kk in a:
+        #             a2 = adj[kk]
+        #             if len(a2) == len(a):
+        #                 for ai in a:
+        #                     if ai not in adj[kk]:
+        #                         blacklist.update(a)
+        #                         found = False
+        #
+        #         if found:
+        #             yield k
 
     def nodes_iter(self, data=False):
         """Return an iterator over the nodes.
