@@ -76,7 +76,7 @@ class Hypergraph(object):
         return map(lambda x: tuple(x, len(x)), self.adj(n))
 
 
-    def fractional_cover(self, n):
+    def fractional_cover(self, verts):
         if cx is None:
             raise ImportError()
 
@@ -98,7 +98,7 @@ class Hypergraph(object):
 
         # constraints
         constraints = []
-        for k in self.__vertices:
+        for k in verts:
             constraint = []
             for e in self.incident_edges(k):
                 constraint.append("e{0}".format(e))
@@ -123,18 +123,21 @@ class Hypergraph(object):
         for e in es:
             self.add_hyperedge([x for x in e if x in self.__vertices])
 
+    #can also contract edge parts >= 2, e[0] is the edge that is kept
     def contract_edge(self, e):
+        assert(len(e) >= 2)
         dl = -1
         for (k, v) in self.__edges:
             contr = [x for x in v if x not in e]
-            if len(contr) > 0:
+            #assert(len(contr) >= 1)
+            if len(contr) == 0: # and contr[0] == e[0]:
                 dl = k
-            elif len(contr) < len(v):
+            elif (len(contr) + 1 < len(v)) or (len(contr) + 1 == len(v) and e[0] not in v):
                 contr.append(e[0])
                 self.__edges[k] = tuple(contr)
         if dl >= 0:
             del self.__edges[dl]
-        self.__vertices -= e
+        self.__vertices -= e[1:]
 
     def incident_edges(self, v):
         edges = {}
