@@ -1,6 +1,8 @@
 #!/usr/bin/env false
-#from __future__ import absolute_import
-import validateGraph_testcase as vtd
+from __future__ import absolute_import
+import htd_validate
+
+import htd_validate_tests.tests.utils.validateGraph_testcase as vtd
 import os
 import htd_validate.utils.hypergraph
 

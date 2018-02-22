@@ -1,6 +1,6 @@
 #!/usr/bin/env false
-
-import test_validateTD as vtd
+from __future__ import absolute_import
+import htd_validate_tests.tests.validators.test_validateTD as vtd
 
 import htd_validate.utils as grap
 import htd_validate.decompositions as dec

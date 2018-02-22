@@ -1,6 +1,6 @@
 #!/usr/bin/env false
-
-import validateTD_testcase as vtd
+from __future__ import absolute_import
+import htd_validate_tests.tests.validators.validateTD_testcase as vtd
 
 
 class TestValidateTD(vtd.ValidateTDTestCase):

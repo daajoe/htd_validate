@@ -260,6 +260,9 @@ class HypergraphPrimalView(object): #(nx.graph): #https://networkx.github.io/doc
         #    del adj[u][n]  # remove all edges n-u in graph
         #del adj[n]  # now remove node
 
+    def __delitem__(self, v):
+        self.remove_node(v)
+
     def remove_nodes_from(self, nodes):
         """Remove multiple nodes.
 
@@ -841,6 +844,11 @@ class HypergraphPrimalView(object): #(nx.graph): #https://networkx.github.io/doc
         else:  # return a dict
             return dict(self.degree_iter(nbunch, weight))
 
+    def biconnected_components(self):
+        return nx.biconnected_components(self)
+        #for b in nx.biconnected_components(self):
+        #    yield b
+
     def degree_iter(self, nbunch=None, weight=None):
         """Return an iterator for (node, degree).
 
@@ -1118,8 +1126,8 @@ class HypergraphPrimalView(object): #(nx.graph): #https://networkx.github.io/doc
     def iter_twin_vertices(self):
         ngb = {}
         for k in self.__hg:
-            tp = tuple(self.__hg.adjByNode(k).keys())
-            if tp in ngb:
+            tp = tuple(sorted(self.__hg.adjByNode(k).keys()))
+            if tp not in ngb:
                 ngb[tp] = []
             ngb[tp].append(k)
 

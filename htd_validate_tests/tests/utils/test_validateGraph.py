@@ -1,6 +1,8 @@
 #!/usr/bin/env false
+from __future__ import absolute_import
 import htd_validate
-import validateGraph_testcase as vtd
+
+import htd_validate_tests.tests.utils.validateGraph_testcase as vtd
 from htd_validate.decompositions import Decomposition
 
 
