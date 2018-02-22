@@ -126,7 +126,7 @@ class HypergraphPrimalView(object): #(nx.graph): #https://networkx.github.io/doc
         >>> G[0]
         {1: {}}
         """
-        return self.__hg.adj(n)
+        return self.__hg.adjByNode(n)
 
     def add_node(self, n, attr_dict=None, **attr):
         """Add a single node n and update node attributes.
@@ -252,7 +252,7 @@ class HypergraphPrimalView(object): #(nx.graph): #https://networkx.github.io/doc
         """
         #adj = self.adj
         try:
-            #nbrs = list(adj[n].keys())  # keys handles self-loops (allow mutation later)
+            #nbrs = list(adjByNode[n].keys())  # keys handles self-loops (allow mutation later)
             del self.__hg[n]
         except KeyError:  # NetworkXError if n not in self
             raise nx.NetworkXError("The node %s is not in the graph." % (n,))
@@ -504,7 +504,7 @@ class HypergraphPrimalView(object): #(nx.graph): #https://networkx.github.io/doc
 
         """
         try:
-            return v in self.__hg.adj(u)
+            return v in self.__hg.adjByNode(u)
         except KeyError:
             return False
         #raise NotImplementedError()
@@ -546,7 +546,7 @@ class HypergraphPrimalView(object): #(nx.graph): #https://networkx.github.io/doc
 
         """
         try:
-            return self.__hg.adj(n).keys()
+            return self.__hg.adjByNode(n).keys()
         except KeyError:
             raise nx.NetworkXError("The node %s is not in the graph." % (n,))
 
@@ -569,7 +569,7 @@ class HypergraphPrimalView(object): #(nx.graph): #https://networkx.github.io/doc
         [1]
         """
         try:
-            return iter(self.__hg.adj(n).keys())
+            return iter(self.__hg.adjByNode(n).keys())
         except KeyError:
             raise nx.NetworkXError("The node %s is not in the graph." % (n,))
 
@@ -680,7 +680,7 @@ class HypergraphPrimalView(object): #(nx.graph): #https://networkx.github.io/doc
         if nbunch is None:
             nodes_nbrs = self.__hg.adj.items()
         else:
-            nodes_nbrs = ((n, self.__hg.adj[n]) for n in self.nbunch_iter(nbunch))
+            nodes_nbrs = ((n, self.__hg.adjByNode[n]) for n in self.nbunch_iter(nbunch))
         if data is True:
             for n, nbrs in nodes_nbrs:
                 for nbr, ddict in nbrs.items():
@@ -747,7 +747,7 @@ class HypergraphPrimalView(object): #(nx.graph): #https://networkx.github.io/doc
         0
         """
         try:
-            return self.__hg.adj(u)[v]
+            return self.__hg.adjByNode(u)[v]
         except KeyError:
             return default
 
@@ -879,7 +879,7 @@ class HypergraphPrimalView(object): #(nx.graph): #https://networkx.github.io/doc
         if nbunch is None:
             nodes_nbrs = self.__hg.adj.items()
         else:
-            nodes_nbrs = ((n, self.__hg.adj(n)) for n in self.nbunch_iter(nbunch))
+            nodes_nbrs = ((n, self.__hg.adjByNode(n)) for n in self.nbunch_iter(nbunch))
 
         if weight is None:
             for n, nbrs in nodes_nbrs:
@@ -1118,7 +1118,7 @@ class HypergraphPrimalView(object): #(nx.graph): #https://networkx.github.io/doc
     def iter_twin_vertices(self):
         ngb = {}
         for k in self.__hg:
-            tp = tuple(self.__hg.adj(k).keys())
+            tp = tuple(self.__hg.adjByNode(k).keys())
             if tp in ngb:
                 ngb[tp] = []
             ngb[tp].append(k)
@@ -1158,7 +1158,7 @@ class HypergraphPrimalView(object): #(nx.graph): #https://networkx.github.io/doc
         1
         """
         if u is None: return int(self.size())
-        if v in self.__hg.adj(u):
+        if v in self.__hg.adjByNode(u):
             return 1
         else:
             return 0

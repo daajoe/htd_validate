@@ -63,6 +63,8 @@ class SymTab:
 
 class Hypergraph(object):
     __d = {}
+    #__edge_type = type(tuple)
+    __edge_type = tuple
 
     def __init__(self, non_numerical=False, vertices=None):
         self.__edges = dict()
@@ -75,7 +77,7 @@ class Hypergraph(object):
             self.__elabel = {}
 
     def edge_rank(self, n):
-        return map(lambda x: tuple(x, len(x)), self.adj(n))
+        return map(lambda x: tuple(x, len(x)), self.adjByNode(n))
 
 
     def fractional_cover(self, verts):
@@ -85,16 +87,10 @@ class Hypergraph(object):
         problem = cx.Cplex()
         problem.objective.set_sense(problem.objective.sense.minimize)
 
-        names = []
-
+        names = ["e{0}".format(e) for e in self.edges()]
         # coefficients
-        objective = []
-        for e in self.edges():
-            names.append("e{0}".format(e))
-            objective.append(1)
-
-        problem.variables.add(obj=objective,
-                              lb=[0] * len(names),
+        problem.variables.add(obj=[1] * len(self.edges()),
+                              lb=[0] * len(self.edges()),
                               # ub=upper_bounds,
                               names=names)
 
@@ -109,8 +105,8 @@ class Hypergraph(object):
 
         problem.linear_constraints.add(lin_expr=constraints,
                                        senses=["G"] * len(constraints),
-                                       rhs=[1] * len(constraints),
-                                       names=["c{0}".format(x) for x in names])
+                                       rhs=[1] * len(constraints))#,
+                                       #names=["c{0}".format(x) for x in names])
 
         problem.solve()
         assert(problem.solution.get_status() == 1)
@@ -136,7 +132,7 @@ class Hypergraph(object):
                 dl = k
             elif (len(contr) + 1 < len(v)) or (len(contr) + 1 == len(v) and e[0] not in v):
                 contr.append(e[0])
-                self.__edges[k] = tuple(contr)
+                self.__edges[k] = Hypergraph.__edge_type(contr)
         if dl >= 0:
             del self.__edges[dl]
         self.__vertices -= e[1:]
@@ -150,7 +146,7 @@ class Hypergraph(object):
         return edges
 
     def edge_rank(self, n):
-        return map(lambda x: tuple(x, len(x)), self.adj(n))
+        return map(lambda x: tuple(x, len(x)), self.adjByNode(n))
 
     # @staticmethod
     # def project_edge(e, p):
@@ -163,15 +159,7 @@ class Hypergraph(object):
     #            nbh[e] = Hypergraph.__d
     #    return nbh
 
-
-    @property
-    def adj(self):
-        nbhs = dict()
-        for k in self.__vertices:
-            nbhs[k] = self.adj(k)
-        return nbhs
-
-    def adj(self, v):
+    def adjByNode(self, v):
         nbh = dict()
         for e in self.__edges.values():
             if v in e:
@@ -180,10 +168,30 @@ class Hypergraph(object):
                         nbh[ex] = Hypergraph.__d
         return nbh
 
+    @property
+    def adj(self):
+        nbhs = dict()
+        for k in self.__vertices:
+            nbhs[k] = self.adjByNode(k)
+        return nbhs
+
     def __delitem__(self, v):
-        del self.__vertices[v]
-        for k in self.__edges:
+        #please do not make me copy everything :(
+        #assert(Hypergraph.__edge_type == type(list))
+        self.__vertices.remove(v)
+        #del self.__vertices[v]
+        dl = []
+        for k, e in self.__edges.iteritems():
             if v in self.__edges[k]:
+                #thank you, tuple!
+                #del self.__edges[k][v]
+                e = set(e)
+                e.remove(v)
+                self.__edges[k] = Hypergraph.__edge_type(e)
+                #print self.__edges[k]
+                dl.append((k, e))
+        for k, e in dl:
+            if len(e) <= 1 or self.isSubsumed(e, modulo=k):
                 del self.__edges[k]
 
     def number_of_edges(self):
@@ -332,14 +340,23 @@ class Hypergraph(object):
             self.__elabel[edge_id] = name
 
         # remove/avoid already subsets of edges
-        sx = set(X)
-        for e in self.__edges.values():
-            if sx.issubset(e):
-                return None
-
-        self.__edges[edge_id] = tuple(X)
-        self.__vertices.update(X)
+        if not self.isSubsumed(set(X), checkSubsumes=True):
+            self.__edges[edge_id] = Hypergraph.__edge_type(X)
+            self.__vertices.update(X)
         return X
+
+    def isSubsumed(self, sx, checkSubsumes=False, modulo=-1):
+        for k, e in self.__edges.iteritems():
+            if k == modulo:
+                continue
+            elif sx.issubset(e):
+                return True
+            elif checkSubsumes and sx.issuperset(e):  #reset the edge
+                #print sx, e
+                #self.__edges[k][:] = sx
+                self.__edges[k] = Hypergraph.__edge_type(sx)
+                return True
+        return False
 
     def edge_iter(self):
         return self.__edges.iterkeys()

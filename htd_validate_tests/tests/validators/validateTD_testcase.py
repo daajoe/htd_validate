@@ -12,8 +12,8 @@ import htd_validate.utils
 class ValidateTDTestCase(unittest.TestCase):
     _td = "td"
     _gr = "gr"
-    _td_classname = "TreeDecomposition"
-    _gr_classname = "Graph"
+    _td_classname = htd_validate.decompositions.TreeDecomposition.__name__
+    _gr_classname = htd_validate.utils.Graph.__name__
 
     def assertFromFiles(self, graph_file, td_file, assertion=True, strict=False):
         def _assertValidate():
