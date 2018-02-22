@@ -1,6 +1,6 @@
 #!/usr/bin/env false
 
-import validatetd_testcase as vtd
+import validateTD_testcase as vtd
 
 
 class TestValidateTD(vtd.ValidateTDTestCase):

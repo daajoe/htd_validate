@@ -183,7 +183,9 @@ class Decomposition(object):
 
     def is_connected(self):
         vertex2bags = self.bag_occuences()
+        #print self.hypergraph.number_of_edges()
         for v in self.hypergraph.nodes_iter():
+            print v
             SG = self.tree.subgraph(vertex2bags[v])
             if not nx.is_connected(SG.to_undirected()):
                 logging.error('Subgraph induced by vertex "%s" is not connected' % v)

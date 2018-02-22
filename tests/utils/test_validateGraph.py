@@ -1,6 +1,6 @@
 #!/usr/bin/env false
 import htd_validate
-import tests.utils.validatetd_testcase as vtd
+import tests.utils.validateGraph_testcase as vtd
 from htd_validate.decompositions import Decomposition
 
 

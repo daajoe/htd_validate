@@ -64,8 +64,10 @@ class SymTab:
 class Hypergraph(object):
     __d = {}
 
-    def __init__(self, non_numerical=False, vertices=set()):
+    def __init__(self, non_numerical=False, vertices=None):
         self.__edges = dict()
+        if vertices is None:
+            vertices = set()
         self.__vertices = vertices
         self.__non_numerical = non_numerical
         if self.__non_numerical:
