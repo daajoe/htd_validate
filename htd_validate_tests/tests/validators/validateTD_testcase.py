@@ -7,19 +7,23 @@ import unittest
 
 import htd_validate.decompositions
 import htd_validate.utils
+import htd_validate_tests.tests.utils.validateGraph_testcase as vg
 
-
-class ValidateTDTestCase(unittest.TestCase):
+class ValidateTDTestCase(vg.ValidateGraphTestCase):
     _td = "td"
     _gr = "gr"
     _td_classname = htd_validate.decompositions.TreeDecomposition.__name__
     _gr_classname = htd_validate.utils.Graph.__name__
 
+    #code duplication with validateGraph_testcase!
+    #def loadFile(self, graph_file, strict=False):
+    #    return getattr(htd_validate.utils, self.__class__._gr_classname).from_file(graph_file, strict)
+
     def assertFromFiles(self, graph_file, td_file, assertion=True, strict=False):
         def _assertValidate():
-            hg = getattr(htd_validate.utils, self.__class__._gr_classname).from_file(graph_file)
+            hg = self.loadFile(graph_file, strict)
             decomp = getattr(htd_validate.decompositions, self.__class__._td_classname).from_file(filename=td_file,
-                                                                                                      strict=strict)
+                                                                                                  strict=strict)
             self.assertEqual(assertion, decomp.validate(hg),
                                  "td validation result wrong, should be: %s in: %s" % (assertion, td_file))
 
@@ -29,11 +33,11 @@ class ValidateTDTestCase(unittest.TestCase):
         else:
             _assertValidate()
 
-    def setUp(self):
-        pass
+    #def setUp(self):
+    #    pass
 
-    def tearDown(self):
-        pass
+    #def tearDown(self):
+    #    pass
 
     def validateFolder(self, folder, assertion=True, strict=False):
         graph = None

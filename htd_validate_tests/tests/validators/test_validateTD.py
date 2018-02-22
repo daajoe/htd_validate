@@ -1,7 +1,7 @@
 #!/usr/bin/env false
 from __future__ import absolute_import
 import htd_validate_tests.tests.validators.validateTD_testcase as vtd
-
+import htd_validate.decompositions.td as td
 
 class TestValidateTD(vtd.ValidateTDTestCase):
 
@@ -36,3 +36,21 @@ class TestValidateTD(vtd.ValidateTDTestCase):
     def test_controversial(self):
         # Inputs where format requirements might be seen as controversial
         self.validateFolder("controversial", True or False)
+
+    def tdFromGraph(self, graph_file, ord=None):
+        g = self.loadFile(self.filePath("testTD/") + graph_file)
+        self.assertIsNotNone(g)
+        if ord is None:
+            ord = range(g.number_of_nodes() + 1)
+        tdx = td.TreeDecomposition.from_ordering(ord, g)
+        print tdx.chi, tdx.T
+        tdx.show(2)
+        return tdx
+
+
+    def test_treedecomposition(self):
+        if self._td_classname != td.TreeDecomposition.__name__:
+            return
+        self.tdFromGraph("C3.gr")
+        self.tdFromGraph("C4.gr")
+        self.tdFromGraph("CPath4.gr")

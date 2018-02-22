@@ -1172,5 +1172,68 @@ class HypergraphPrimalView(object): #(nx.graph): #https://networkx.github.io/doc
             return 0
 
     def nbunch_iter(self, nbunch=None):
-        raise NotImplementedError()
+        """Return an iterator of nodes contained in nbunch that are
+        also in the graph.
+
+        The nodes in nbunch are checked for membership in the graph
+        and if not are silently ignored.
+
+        Parameters
+        ----------
+        nbunch : iterable container, optional (default=all nodes)
+            A container of nodes.  The container will be iterated
+            through once.
+
+        Returns
+        -------
+        niter : iterator
+            An iterator over nodes in nbunch that are also in the graph.
+            If nbunch is None, iterate over all nodes in the graph.
+
+        Raises
+        ------
+        NetworkXError
+            If nbunch is not a node or or sequence of nodes.
+            If a node in nbunch is not hashable.
+
+        See Also
+        --------
+        Graph.__iter__
+
+        Notes
+        -----
+        When nbunch is an iterator, the returned iterator yields values
+        directly from nbunch, becoming exhausted when nbunch is exhausted.
+
+        To test whether nbunch is a single node, one can use
+        "if nbunch in self:", even after processing with this routine.
+
+        If nbunch is not a node or a (possibly empty) sequence/iterator
+        or None, a NetworkXError is raised.  Also, if any object in
+        nbunch is not hashable, a NetworkXError is raised.
+        """
+        if nbunch is None:   # include all nodes via iterator
+            bunch = self.nodes_iter()
+        elif nbunch in self:  # if nbunch is a single node
+            bunch = iter([nbunch])
+        else:                # if nbunch is a sequence of nodes
+            def bunch_iter(nlist, adj):
+                try:
+                    for n in nlist:
+                        if n in adj:
+                            yield n
+                except TypeError as e:
+                    message = e.args[0]
+                    # capture error for non-sequence/iterator nbunch.
+                    if 'iter' in message:
+                        raise nx.NetworkXError(
+                            "nbunch is not a node or a sequence of nodes.")
+                    # capture error for unhashable node.
+                    elif 'hashable' in message:
+                        raise nx.NetworkXError(
+                            "Node %s in the sequence nbunch is not a valid node."%n)
+                    else:
+                        raise
+            bunch = bunch_iter(nbunch, self.nodes())
+        return bunch
 

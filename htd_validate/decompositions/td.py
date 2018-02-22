@@ -13,12 +13,39 @@ from htd_validate.utils import Graph
 class TreeDecomposition(Decomposition):
     _problem_string = 'td'
 
+    #bucket elimination algorithm
+    @staticmethod
+    def from_ordering(ordering, g):
+        tree = nx.DiGraph()
+        #use lex smallest, python first compares first pos of tuple
+        smallest = lambda x: min([(ordering.index(xi), xi) for xi in x])
+
+        #initialize with empty bags
+        chi = {v: set() for v in g.nodes()}
+        tree.add_nodes_from(range(g.number_of_nodes() + 1))
+
+        for e in g.edges():
+            chi[smallest(e)[1]].update(e)
+
+        for v in g.nodes():
+            #copy
+            A = set(chi[v]) #- v
+            A.remove(v)
+
+            if len(A) > 0:
+                nxt = smallest(A)[1]
+                chi[nxt].update(A)
+                tree.add_edge(nxt, v)
+
+        return TreeDecomposition(True, tree, chi, g)
+
     @classmethod
     def graph_type(cls):
         return Graph.__name__
 
-    def __init__(self, plot_if_td_invalid=False):
-        Decomposition.__init__(self)
+    def __init__(self, plot_if_td_invalid=False, tree=None, bags=None, graph=None):
+        super.__call__(TreeDecomposition, self).__init__(tree, bags, graph)
+        self.plot_if_td_invalid = plot_if_td_invalid
 
     @staticmethod
     def _read_header(line):

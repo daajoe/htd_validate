@@ -18,7 +18,7 @@ class GeneralizedHypertreeDecomposition(Decomposition):
         return Hypergraph.__name__
 
     def __init__(self, plot_if_td_invalid=False):
-        Decomposition.__init__(self)
+        super(GeneralizedHypertreeDecomposition, self).__init__()
         self.hypergraph = Hypergraph()
         self.hyperedge_function = defaultdict(dict)
 

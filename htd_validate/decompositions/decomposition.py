@@ -17,10 +17,23 @@ class Decomposition(object):
             raise TypeError("base class may not be instantiated")
         return object.__new__(cls, *args, **kwargs)
 
-    def __init__(self):
-        self.tree = nx.DiGraph()
-        self.bags = {}
-        self.hypergraph = None
+    @property
+    def chi(self): return self.bags
+
+    @property
+    def T(self): return self.tree
+
+    @property
+    def graph(self): return self.hypergraph
+
+    def __init__(self, tree=None, bags=None, graph=None):
+        if tree is None:
+            tree = nx.DiGraph()
+        if bags is None:
+            bags = {}
+        self.tree = tree
+        self.bags = bags
+        self.hypergraph = graph
 
     @staticmethod
     def graph_type():
