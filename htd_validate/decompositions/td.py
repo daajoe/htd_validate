@@ -15,26 +15,35 @@ class TreeDecomposition(Decomposition):
 
     #bucket elimination algorithm
     @staticmethod
-    def from_ordering(ordering, g):
+    def from_ordering(g, ordering=None):
+        if ordering is None:
+            ordering = sorted(g.nodes())
+
+        #print ordering
+
         tree = nx.DiGraph()
         #use lex smallest, python first compares first pos of tuple
         smallest = lambda x: min([(ordering.index(xi), xi) for xi in x])
 
         #initialize with empty bags
         chi = {v: set() for v in g.nodes()}
-        tree.add_nodes_from(range(g.number_of_nodes() + 1))
+        tree.add_nodes_from(range(1, g.number_of_nodes() + 1))
 
         for e in g.edges():
             chi[smallest(e)[1]].update(e)
 
-        for v in g.nodes():
+        for v in ordering:
             #copy
             A = set(chi[v]) #- v
-            A.remove(v)
 
-            if len(A) > 0:
+            if len(A) > 1:
+                #print A
+                A.remove(v)
+                #print A
                 nxt = smallest(A)[1]
+                #print nxt,v,A,chi[nxt]
                 chi[nxt].update(A)
+                #print chi[nxt]
                 tree.add_edge(nxt, v)
 
         return TreeDecomposition(True, tree, chi, g)

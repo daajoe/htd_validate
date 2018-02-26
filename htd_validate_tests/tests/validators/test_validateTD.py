@@ -37,20 +37,24 @@ class TestValidateTD(vtd.ValidateTDTestCase):
         # Inputs where format requirements might be seen as controversial
         self.validateFolder("controversial", True or False)
 
-    def tdFromGraph(self, graph_file, ord=None):
+    def tdFromGraph(self, graph_file, maxbag, ord=None):
         g = self.loadFile(self.filePath("testTD/") + graph_file)
         self.assertIsNotNone(g)
-        if ord is None:
-            ord = range(g.number_of_nodes() + 1)
-        tdx = td.TreeDecomposition.from_ordering(ord, g)
-        print tdx.chi, tdx.T
-        tdx.show(2)
+        #if ord is None:
+        #    ord = range(g.number_of_nodes() + 1)
+        tdx = td.TreeDecomposition.from_ordering(g, ord)
+        print tdx.chi, tdx.T.edges()
+        #tdx.show(2)
+        self.assertEqual(maxbag, tdx.max_bag_size())
+        self.assertTrue(tdx.validate(g))
         return tdx
 
 
     def test_treedecomposition(self):
         if self._td_classname != td.TreeDecomposition.__name__:
             return
-        self.tdFromGraph("C3.gr")
-        self.tdFromGraph("C4.gr")
-        self.tdFromGraph("CPath4.gr")
+        self.tdFromGraph("C3.gr", 3)
+        self.tdFromGraph("C4.gr", 4)
+        self.tdFromGraph("CPath4.gr", 2)
+        self.tdFromGraph("C1_1.gr", 4, [6, 2, 4, 1, 3, 5])
+        self.tdFromGraph("C1_1.gr", 4, [6, 5, 4, 3, 2, 1])
