@@ -125,7 +125,7 @@ class Hypergraph(object):
     def contract_edge(self, e):
         assert(len(e) >= 2)
         dl = -1
-        for (k, v) in self.__edges:
+        for (k, v) in self.__edges.iteritems():
             contr = [x for x in v if x not in e]
             #assert(len(contr) >= 1)
             if len(contr) == 0: # and contr[0] == e[0]:
@@ -135,18 +135,18 @@ class Hypergraph(object):
                 self.__edges[k] = Hypergraph.__edge_type(contr)
         if dl >= 0:
             del self.__edges[dl]
-        self.__vertices -= e[1:]
+        self.__vertices.difference_update(e[1:])
 
     def incident_edges(self, v):
         edges = {}
-        for e in self.__edges:
-            ge = self.get_edge(e)
+        for (e, ge) in self.__edges.iteritems():
             if v in ge:
                 edges[e] = ge
         return edges
 
     def edge_rank(self, n):
-        return map(lambda x: tuple(x, len(x)), self.adjByNode(n))
+        #print self.incident_edges(n).values()
+        return map(lambda x: (x, len(x)), self.incident_edges(n).values())
 
     # @staticmethod
     # def project_edge(e, p):

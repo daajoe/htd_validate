@@ -309,11 +309,12 @@ class HypergraphPrimalView(object): #(nx.graph): #https://networkx.github.io/doc
             if clique_sizes_at_least <= len(clique): # <= clique_sizes_up_to:
                 nodes_of_clique = []
                 for c in clique:
-                    simpl = self.degree(c) - len(clique)
+                    simpl = self.degree(c) - len(clique) + 1
+                    assert(simpl >= 0)
                     if simpl <= simplicial_diff:
                         nodes_of_clique.append((c, simpl))
-                if len(nodes_of_clique) >= 0:
-                    yield (nodes_of_clique, clique)
+                #if len(nodes_of_clique) >= 0:
+                yield (nodes_of_clique, clique)
         # adj = self.__hg.adj
         # blacklist = set()
         # for k, a in adj:
@@ -884,9 +885,9 @@ class HypergraphPrimalView(object): #(nx.graph): #https://networkx.github.io/doc
         [(0, 1), (1, 2)]
 
         """
-        if nbunch is None:
+        if nbunch is None:      #non lazy
             nodes_nbrs = self.__hg.adj.items()
-        else:
+        else:                   #lazy
             nodes_nbrs = ((n, self.__hg.adjByNode(n)) for n in self.nbunch_iter(nbunch))
 
         if weight is None:
@@ -897,6 +898,12 @@ class HypergraphPrimalView(object): #(nx.graph): #https://networkx.github.io/doc
             for n, nbrs in nodes_nbrs:
                 yield (n, sum((nbrs[nbr].get(weight, 1) for nbr in nbrs)) +
                        (n in nbrs and nbrs[n].get(weight, 1)))
+
+    def hyper_degree_iter(self, nbunch=None):
+        nodes_nbrs = ((n, self.__hg.incident_edges(n)) for n in self.nbunch_iter(nbunch))
+
+        for n, nbrs in nodes_nbrs:
+            yield (n, len(nbrs))  # return tuple (n,degree)
 
     def clear(self):
         """Remove all nodes and edges from the graph.
