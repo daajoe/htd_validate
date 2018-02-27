@@ -38,6 +38,14 @@ try:
 except ImportError:
     cx = None
 
+try:
+    import clingo
+except:
+    clingo = None
+
+from pymonad.Reader import curry
+
+from UserString import MutableString
 import subprocess
 import sys
 import io
@@ -82,6 +90,78 @@ class Hypergraph(object):
 
     def edge_rank(self, n):
         return map(lambda x: tuple(x, len(x)), self.adjByNode(n))
+
+    #--solve-limit=<n>[,<m>] : Stop search after <n> conflicts or <m> restarts
+    def largest_clique_asp(self, solve_limit="umax,umax", enum=True, usc=True):
+        if clingo is None:
+            raise ImportError()
+
+        @curry
+        def __on_model(aset, model):
+            aset[1] |= model.optimality_proven
+            if model.cost[0] <= aset[0]:
+                if model.cost[0] < aset[0]:
+                    aset[2] = []
+                aset[0] = model.cost[0]
+                aset[2].append(str(model).split(" "))
+
+        aset = [sys.maxint, False, []]
+        c = clingo.Control()
+
+        prog = MutableString()
+
+        for u in self.__vertices:
+            prog += " {{ u{0} }}. ".format(u)
+            prog += " #show u{0}/0. ".format(u)
+            prog += " :~ not u{0}.[1,u{1}] ".format(u,u)
+
+        adj = self.adj
+
+        for u in self.__vertices:
+            for v in self.__vertices:
+                if u < v and v not in adj[u]:
+                    prog += " :- u{0}, u{1}. ".format(u, v)
+
+        constr = set()
+        for e in self.__edges.values():
+            #prevent 3 elements from the same edge
+            k = 3
+            sub = range(0, k)
+            while True: #sub[0] <= len(e) - k:
+                rule = " :- "
+                pos = 0
+                for v in sub:
+                    rule += " u{0}{1}".format(e[v], ". " if pos == k - 1 else ",")
+                    pos += 1
+
+                if rule not in constr:
+                    constr.add(rule)
+                    prog += rule
+
+                if sub[0] == len(e) - k:
+                    break
+
+                #next position
+                for i in xrange(k - 1, -1, -1):
+                    if sub[i] < len(e) - (k - i - 1):
+                        sub[i] += 1
+                        for j in xrange(i + 1, k):
+                            sub[j] = sub[i] + (j - i)
+
+        if usc:
+            c.configuration.solver.opt_strategy = "usc,pmres,disjoint,stratify"
+            c.configuration.solver.opt_usc_shrink = "min"
+        if enum:
+            c.configuration.solve.opt_mode = "optN"
+            c.configuration.solve.models = 0
+        c.configuration.solve.solve_limit = solve_limit
+        #print str(prog)
+        c.add("prog", [], str(prog))
+        c.ground([("prog", [])])
+
+        c.solve(on_model=__on_model(aset))
+
+        print len(aset[2]), aset
 
 
     def fractional_cover(self, verts):

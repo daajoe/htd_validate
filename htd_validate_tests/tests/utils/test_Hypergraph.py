@@ -38,3 +38,7 @@ class TestHypergraph(vtd.ValidateGraphTestCase):
 
         hg = self.loadFile(self.filePath("testHG/") + "C4.edge")
         self.assertEqual(2.0, hg.fractional_cover([1, 2, 3, 4]))
+
+    def testLargestClique(self):
+        hg = self.loadFile(self.filePath("testHG/") + "C13_7.edge")
+        hg.largest_clique_asp(solve_limit="20,20")
