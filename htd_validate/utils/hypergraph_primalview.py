@@ -21,7 +21,14 @@
 import networkx as nx
 #import cplex
 from copy import deepcopy
+
+from htd_validate.utils.formula import Formula
 from hypergraph import Hypergraph
+
+import subprocess
+import sys
+import io
+import threading
 
 class HypergraphPrimalView(object): #(nx.graph): #https://networkx.github.io/documentation/networkx-1.11/_modules/networkx/classes/graph.html#Graph
 
@@ -298,6 +305,60 @@ class HypergraphPrimalView(object): #(nx.graph): #https://networkx.github.io/doc
                 #del adj[n]
             except KeyError:
                 pass
+
+    def largest_clique(self, solver=["glucose", "-model"], return_code_sat=10, timeout=None):
+
+        clause = Formula()
+        adj = self.__hg.adj
+
+        sat = return_code_sat
+        while sat == return_code_sat:
+
+            p = subprocess.Popen(["glucose", "-model"], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+            clause.stream = p.stdin
+            #space for safety (clauses and variables need to be corrected later on)
+            clause.writeHeader(safety=True)
+
+            for u in self.nodes():
+                for v in self.nodes():
+                    if u < v and v not in adj[u]:
+                        clause.addClause("-{0} -{1}".format(clause.map(u), clause.map(v)))
+
+            for e in self.__hg.edges.values():
+                #for k in xrange(3, len(e) + 1):
+                #prevent 3 elements from the same edge
+
+                k = 3
+                sub = range(0, k)
+
+                while True: #sub[0] <= len(e) - k:
+
+                    cl = ""
+                    for v in sub:
+                        cl.append(" -{0}".format(clause.map(e[v])))
+                        clause.addClause(cl)
+
+                    if sub[0] == len(e) - k:
+                        break
+
+                    #next position
+                    for i in xrange(k - 1, -1, -1):
+                        if sub[i] < len(e) - (k - i - 1):
+                            sub[i] += 1
+                            for j in xrange(i + 1, k):
+                                sub[j] = sub[i] + (j - i)
+
+
+            #seek to the file beginning and correct header
+            clause.writeHeader()
+            clause.close()
+
+            sat = p.wait(timeout)
+
+        for line in p.stdout:
+            if line.startswith("v"):
+                vals = line.split(" ")
+                print vals
 
     #handle with care!
     #returns tuple (list of "almost" (depending on \emph{simplicial_diff}) simplicial vertices, clique) per clique

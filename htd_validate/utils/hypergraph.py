@@ -38,6 +38,10 @@ try:
 except ImportError:
     cx = None
 
+import subprocess
+import sys
+import io
+
 class SymTab:
     def __init__(self, offset=0):
         self.__offset = offset
