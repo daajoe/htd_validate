@@ -42,3 +42,8 @@ class TestHypergraph(vtd.ValidateGraphTestCase):
     def testLargestClique(self):
         hg = self.loadFile(self.filePath("testHG/") + "C13_7.edge")
         hg.largest_clique_asp(solve_limit="20,20")
+
+        hg = self.loadFile(self.filePath("../../../../../hypergraphs/hyperbench/csp_application/") + "Kakuro-hard-001-ext.xml.hg", fischl_format=True)
+        self.assertNotNone(hg)
+
+

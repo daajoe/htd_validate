@@ -14,8 +14,8 @@ class ValidateGraphTestCase(unittest.TestCase):
     _type = "Graph"
     _gr_classname = htd_validate.utils.Graph.__name__  #'missing'
 
-    def loadFile(self, graph_file, strict=False):
-        return getattr(htd_validate.utils, self._gr_classname).from_file(graph_file, strict)
+    def loadFile(self, graph_file, strict=False, fischl_format=False):
+        return getattr(htd_validate.utils, self._gr_classname).from_file(graph_file, strict=strict, fischl_format=fischl_format)
 
     def assertFromFiles(self, graph_file, assertion=True, strict=False):
         if assertion not in [True, False]:

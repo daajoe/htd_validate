@@ -353,7 +353,7 @@ class Hypergraph(object):
     # TODO: move from_file to a central part
 
     @classmethod
-    def from_file(clazz, filename, fischl_format=False):
+    def from_file(clazz, filename, strict=False, fischl_format=False):
         """
         :param filename: name of the file to read from
         :type filename: string
