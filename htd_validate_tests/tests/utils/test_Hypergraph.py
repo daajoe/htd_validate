@@ -39,11 +39,35 @@ class TestHypergraph(vtd.ValidateGraphTestCase):
         hg = self.loadFile(self.filePath("testHG/") + "C4.edge")
         self.assertEqual(2.0, hg.fractional_cover([1, 2, 3, 4]))
 
+    def maxCliqueFromFile(self, maxC, fil, fischl_format=False, ground=False):
+        hg = self.loadFile(fil, fischl_format=fischl_format)
+        self.assertIsNotNone(hg)
+        #if len(hg.nodes()) >= 400:
+        #    return
+        #print hg.edges()
+
+        aset = hg.largest_clique_asp(timeout=2, enum=True, ground=ground)
+        maxC[0] = max(maxC[0], aset[0])
+        if aset[1] == False:
+            maxC[1] += 1
+
+        print maxC[0], len(aset[2]), aset
+        #print maxC
+
     def testLargestClique(self):
-        hg = self.loadFile(self.filePath("testHG/") + "C13_7.edge")
-        hg.largest_clique_asp(solve_limit="20,20")
+        mx = [0, 0]
+        self.maxCliqueFromFile(mx, self.filePath("../../../../../hypergraphs/hyperbench/csp_application/") + "Nonogram-001-table.xml.hg",
+                                    fischl_format=True, ground=False)
 
-        hg = self.loadFile(self.filePath("../../../../../hypergraphs/hyperbench/csp_application/") + "Kakuro-hard-001-ext.xml.hg", fischl_format=True)
-        self.assertNotNone(hg)
-
-
+        self.maxCliqueFromFile(mx, self.filePath("testHG/") + "C13_7.edge")
+        #hg.largest_clique_asp() #solve_limit="20,20")
+        #path, dirs, files
+        for path, dirs, _ in os.walk(self.filePath("../../../../../hypergraphs/hyperbench/")):
+            #print dirs
+            for d in dirs:
+                for _, _, files in os.walk(os.path.join(path, d)):
+                    for f in files:
+                        print d + "/" + f
+                        self.maxCliqueFromFile(mx, self.filePath("../../../../../hypergraphs/hyperbench/" + d + "/") + f,
+                                                fischl_format=True, ground=False)
+        print mx

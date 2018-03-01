@@ -46,9 +46,8 @@ except:
 from pymonad.Reader import curry
 
 from UserString import MutableString
-import subprocess
-import sys
-import io
+import threading
+import time
 
 class SymTab:
     def __init__(self, offset=0):
@@ -92,76 +91,133 @@ class Hypergraph(object):
         return map(lambda x: tuple(x, len(x)), self.adjByNode(n))
 
     #--solve-limit=<n>[,<m>] : Stop search after <n> conflicts or <m> restarts
-    def largest_clique_asp(self, solve_limit="umax,umax", enum=True, usc=True):
+    def largest_clique_asp(self, timeout=10, enum=True, usc=True, ground=True, solve_limit="umax,umax"):
         if clingo is None:
             raise ImportError()
 
         @curry
         def __on_model(aset, model):
-            aset[1] |= model.optimality_proven
-            if model.cost[0] <= aset[0]:
-                if model.cost[0] < aset[0]:
-                    aset[2] = []
-                aset[0] = model.cost[0]
-                aset[2].append(str(model).split(" "))
+            if len(model.cost) == 0:
+                return
 
-        aset = [sys.maxint, False, []]
+            #print model
+            #print model.cost
+            aset[1] |= model.optimality_proven
+            opt = abs(model.cost[0])
+            if opt >= aset[0]:
+                if opt > aset[0]:
+                    aset[2] = []
+                aset[0] = opt
+                aset[2].append(str(model).translate(None, "u()").split(" "))
+
+        aset = [0, False, []]
+
+        #if len(self.__vertices) >= 400:
+        #    return aset
+
+        #aset = [sys.maxint, False, []]
         c = clingo.Control()
 
         prog = MutableString()
+        guess = MutableString()
 
-        for u in self.__vertices:
-            prog += " {{ u{0} }}. ".format(u)
-            prog += " #show u{0}/0. ".format(u)
-            prog += " :~ not u{0}.[1,u{1}] ".format(u,u)
+        #for u in self.__vertices:
+            #prog += "{{ u({0}) }}.\n".format(u)
+            #prog += "#show u({0})/0.\n".format(u)
+            #prog += ":~ not u({0}).[1,u({1})]\n".format(u, u)
 
-        adj = self.adj
+        pos = 0
+        if len(self.__vertices) > 0:
+            guess += "{"
+            prog += "#maximize {"
+            for u in self.__vertices:
+                prog += " 1,u({0}):u({1}){2}".format(u, u, " }.\n" if pos == len(self.__vertices) - 1 else ";")
+                guess += " u({0}){1}".format(u, " }.\n" if pos == len(self.__vertices) - 1 else ";")
+                pos += 1
 
-        for u in self.__vertices:
-            for v in self.__vertices:
-                if u < v and v not in adj[u]:
-                    prog += " :- u{0}, u{1}. ".format(u, v)
+        prog += guess
 
-        constr = set()
-        for e in self.__edges.values():
-            #prevent 3 elements from the same edge
-            k = 3
-            sub = range(0, k)
-            while True: #sub[0] <= len(e) - k:
-                rule = " :- "
-                pos = 0
-                for v in sub:
-                    rule += " u{0}{1}".format(e[v], ". " if pos == k - 1 else ",")
-                    pos += 1
+        #print len(self.__vertices)
+        if not ground and len(self.__vertices) > 0 and len(self.__edges) > 0:
+            prog += "#show u/1.\n"
+            prog += "a(Y1, Y2) :- e(X, Y1), e(X, Y2), Y1 < Y2.\n"
+            prog += ":- u(Y1), u(Y2), not a(Y1, Y2), Y1 < Y2.\n"
+            prog += ":- e(X, Y1), e(X, Y2), e(X, Y3), u(Y1), u(Y2), u(Y3), Y1 < Y2, Y2 < Y3."
+            for k, e in self.__edges.iteritems():
+                for v in e:
+                    prog += "e({0}, {1}).\n".format(k, v)
+        else:
+            adj = self.adj
+            for u in self.__vertices:
+                for v in self.__vertices:
+                    if u < v and v not in adj[u]:
+                        prog += ":- u({0}), u({1}).\n".format(u, v)
 
-                if rule not in constr:
-                    constr.add(rule)
-                    prog += rule
+            constr = set()
+            for e in self.__edges.values():
+                if len(e) <= 2:
+                    continue
+                #prevent 3 elements from the same edge
+                k = 3
+                sub = range(0, k)
+                while True: #sub[0] <= len(e) - k:
+                    rule = []
+                    pos = 0
+                    #print sub
+                    #print e
+                    for v in sub:
+                        rule.append(e[v])
+                        pos += 1
 
-                if sub[0] == len(e) - k:
-                    break
+                    rule = tuple(sorted(rule))
+                    if rule not in constr:
+                        constr.add(rule)
+                        prog += ":- " + ", ".join(("u({0})".format(r) for r in rule)) + ".\n"
 
-                #next position
-                for i in xrange(k - 1, -1, -1):
-                    if sub[i] < len(e) - (k - i - 1):
-                        sub[i] += 1
-                        for j in xrange(i + 1, k):
-                            sub[j] = sub[i] + (j - i)
+                    if sub[0] == len(e) - k:
+                        break
 
+                    #next position
+                    for i in xrange(k - 1, -1, -1):
+                        if sub[i] < len(e) + (i - k):
+                            sub[i] += 1
+                            for j in xrange(i + 1, k):
+                                sub[j] = sub[i] + (j - i)
+                            break
         if usc:
             c.configuration.solver.opt_strategy = "usc,pmres,disjoint,stratify"
             c.configuration.solver.opt_usc_shrink = "min"
         if enum:
             c.configuration.solve.opt_mode = "optN"
-            c.configuration.solve.models = 0
+        else:
+            c.configuration.solve.opt_mode = "opt"
+        c.configuration.solve.models = 0
         c.configuration.solve.solve_limit = solve_limit
+        #c.configuration.sat_prepro = True
+
+
         #print str(prog)
+        #print guess
+
+
         c.add("prog", [], str(prog))
-        c.ground([("prog", [])])
 
-        c.solve(on_model=__on_model(aset))
+        def solver(c, om):
+            #print "solving"
+            c.ground([("prog", [])])
+            #print "grounded"
+            c.solve(on_model=om)
 
-        print len(aset[2]), aset
+        t = threading.Thread(target=solver, args=(c, __on_model(aset)))
+        t.start()
+        t.join(timeout)
+        c.interrupt()
+        t.join()
+
+        aset[1] |= c.statistics["summary"]["models"]["optimal"] > 0
+        aset.append(c.statistics)
+        #print c.statistics
+        return aset
 
 
     def fractional_cover(self, verts):
@@ -288,6 +344,12 @@ class Hypergraph(object):
         return iter(self.__edges.values())
 
     # TODO: copy?
+    #@property
+    def nodes(self):
+        return self.__vertices
+
+    # TODO: copy?
+    #@property
     def edges(self):
         return self.__edges
 
