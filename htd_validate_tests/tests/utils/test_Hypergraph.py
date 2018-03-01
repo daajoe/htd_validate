@@ -58,14 +58,11 @@ class TestHypergraph(vtd.ValidateGraphTestCase):
         mx = [0, 0]
         self.maxCliqueFromFile(mx, self.filePath("../../../../../hypergraphs/hyperbench/csp_application/") + "Nonogram-001-table.xml.hg",
                                     fischl_format=True, ground=False)
-
         self.maxCliqueFromFile(mx, self.filePath("testHG/") + "C13_7.edge")
-        #hg.largest_clique_asp() #solve_limit="20,20")
-        #path, dirs, files
 
         doRealLifeTests = False
-
         if doRealLifeTests:
+            #path, dirs, files
             for path, dirs, _ in os.walk(self.filePath("../../../../../hypergraphs/hyperbench/")):
                 #print dirs
                 for d in dirs:

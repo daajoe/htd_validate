@@ -363,7 +363,8 @@ class HypergraphPrimalView(object): #(nx.graph): #https://networkx.github.io/doc
     #handle with care!
     #returns tuple (list of "almost" (depending on \emph{simplicial_diff}) simplicial vertices, clique) per clique
     #fixme: modify nx.enumerate_all_cliques!
-    def simplicial_iter(self, simplicial_diff=0, clique_sizes_at_least=3, clique_sizes_up_to=5):
+    #todo: use max_clique => sat/asp solver
+    def simplicial_iter(self, max_clique=True, simplicial_diff=0, clique_sizes_at_least=3, clique_sizes_up_to=5):
         for clique in nx.enumerate_all_cliques(self):
             if len(clique) > clique_sizes_up_to:
                 return
@@ -372,7 +373,7 @@ class HypergraphPrimalView(object): #(nx.graph): #https://networkx.github.io/doc
                 for c in clique:
                     simpl = self.degree(c) - len(clique) + 1
                     assert(simpl >= 0)
-                    if simpl <= simplicial_diff:
+                    if simplicial_diff == simpl or 0 < simpl <= simplicial_diff:
                         nodes_of_clique.append((c, simpl))
                 #if len(nodes_of_clique) >= 0:
                 yield (nodes_of_clique, clique)
