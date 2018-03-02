@@ -48,6 +48,7 @@ from pymonad.Reader import curry
 from UserString import MutableString
 import threading
 import time
+from htd_validate.utils.integer import safe_int
 
 class SymTab:
     def __init__(self, offset=0):
@@ -71,7 +72,6 @@ class SymTab:
     def get(self, key):
         return self.__getitem__(key)
 
-
 class Hypergraph(object):
     __d = {}
     #__edge_type = type(tuple)
@@ -91,7 +91,7 @@ class Hypergraph(object):
         return map(lambda x: tuple(x, len(x)), self.adjByNode(n))
 
     #--solve-limit=<n>[,<m>] : Stop search after <n> conflicts or <m> restarts
-    def largest_clique_asp(self, timeout=10, enum=True, usc=True, ground=True, solve_limit="umax,umax"):
+    def largest_clique_asp(self, timeout=10, enum=True, usc=True, ground=True, prevent_k_hyperedge=3, solve_limit="umax,umax"):
         if clingo is None:
             raise ImportError()
 
@@ -108,7 +108,7 @@ class Hypergraph(object):
                 if opt > aset[0]:
                     aset[2] = []
                 aset[0] = opt
-                aset[2].append(str(model).translate(None, "u()").split(" "))
+                aset[2].append([safe_int(x) for x in str(model).translate(None, "u()").split(" ")])
 
         aset = [0, False, []]
 
@@ -158,9 +158,8 @@ class Hypergraph(object):
                 if len(e) <= 2:
                     continue
                 #prevent 3 elements from the same edge
-                k = 3
-                sub = range(0, k)
-                while True: #sub[0] <= len(e) - k:
+                sub = range(0, prevent_k_hyperedge)
+                while True: #sub[0] <= len(e) - prevent_k_hyperedge:
                     rule = []
                     pos = 0
                     #print sub
@@ -174,14 +173,14 @@ class Hypergraph(object):
                         constr.add(rule)
                         prog += ":- " + ", ".join(("u({0})".format(r) for r in rule)) + ".\n"
 
-                    if sub[0] == len(e) - k:
+                    if sub[0] == len(e) - prevent_k_hyperedge:
                         break
 
                     #next position
-                    for i in xrange(k - 1, -1, -1):
-                        if sub[i] < len(e) + (i - k):
+                    for i in xrange(prevent_k_hyperedge - 1, -1, -1):
+                        if sub[i] < len(e) + (i - prevent_k_hyperedge):
                             sub[i] += 1
-                            for j in xrange(i + 1, k):
+                            for j in xrange(i + 1, prevent_k_hyperedge):
                                 sub[j] = sub[i] + (j - i)
                             break
         if usc:
@@ -248,6 +247,10 @@ class Hypergraph(object):
                                        rhs=[1] * len(constraints))#,
                                        #names=["c{0}".format(x) for x in names])
 
+        problem.set_results_stream(None)
+        problem.set_error_stream(None)
+        problem.set_warning_stream(None)
+        problem.set_log_stream(None)
         problem.solve()
         assert(problem.solution.get_status() == 1)
         return problem.solution.get_objective_value()

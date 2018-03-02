@@ -3,3 +3,4 @@ backports.lzma
 PyMonad
 cplex
 clingo
+deprecation
