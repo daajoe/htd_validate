@@ -18,6 +18,7 @@
 # License along with hypergraph.py.  If not, see
 # <http://www.gnu.org/licenses/>.
 # from __future__ import print_function
+import deprecation
 import networkx as nx
 #import cplex
 from copy import deepcopy
@@ -26,6 +27,8 @@ from htd_validate.utils.formula import Formula
 from hypergraph import Hypergraph
 
 import subprocess
+import warnings
+import functools
 import sys
 import io
 import threading
@@ -306,6 +309,10 @@ class HypergraphPrimalView(object): #(nx.graph): #https://networkx.github.io/doc
             except KeyError:
                 pass
 
+    #@deprecated("not tested; now replaced by ASP version in hypergraph")
+    @deprecation.deprecated(deprecated_in="1.0", removed_in="1.0",
+                            current_version="1.0",
+                            details="not tested; now replaced by ASP version for various reasons in Hypergraph")
     def largest_clique(self, solver=["glucose", "-model"], return_code_sat=10, timeout=None):
 
         clause = Formula()
@@ -362,12 +369,14 @@ class HypergraphPrimalView(object): #(nx.graph): #https://networkx.github.io/doc
 
     #handle with care!
     #returns tuple (list of "almost" (depending on \emph{simplicial_diff}) simplicial vertices, clique) per clique
-    #fixme: modify nx.enumerate_all_cliques!
-    #todo: use max_clique => sat/asp solver
-    def simplicial_iter(self, max_clique=True, simplicial_diff=0, clique_sizes_at_least=3, clique_sizes_up_to=5):
-        for clique in nx.enumerate_all_cliques(self):
-            if len(clique) > clique_sizes_up_to:
+    #fixme: modify/replace nx.enumerate_all_cliques!
+    def simplicial_iter(self, simplicial_diff=0, clique_sizes_at_least=3, clique_sizes_up_to=5, max_clique=True):
+        maxcl = 0
+        #for clique in nx.enumerate_all_cliques(self) if not max_clique else self.__hg.largest_clique_asp()[2]:
+        for clique in self.__hg.largest_clique_asp(prevent_k_hyperedge=5)[2] if not max_clique else self.__hg.largest_clique_asp()[2]:
+            if not max_clique and len(clique) > clique_sizes_up_to:
                 return
+            maxcl = max(maxcl, len(clique))
             if clique_sizes_at_least <= len(clique): # <= clique_sizes_up_to:
                 nodes_of_clique = []
                 for c in clique:
@@ -375,8 +384,10 @@ class HypergraphPrimalView(object): #(nx.graph): #https://networkx.github.io/doc
                     assert(simpl >= 0)
                     if simplicial_diff == simpl or 0 < simpl <= simplicial_diff:
                         nodes_of_clique.append((c, simpl))
-                #if len(nodes_of_clique) >= 0:
-                yield (nodes_of_clique, clique)
+                if not max_clique or len(nodes_of_clique) > 0:
+                    yield (nodes_of_clique, clique, maxcl)
+        if max_clique: #maybe we did not yield yet, get a chance now
+            yield ([], [], maxcl)
         # adj = self.__hg.adj
         # blacklist = set()
         # for k, a in adj:

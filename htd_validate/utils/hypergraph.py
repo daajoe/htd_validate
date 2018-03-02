@@ -48,7 +48,8 @@ from pymonad.Reader import curry
 
 from UserString import MutableString
 import threading
-
+import time
+from htd_validate.utils.integer import safe_int
 
 class SymTab:
     def __init__(self, offset=0):
@@ -72,7 +73,6 @@ class SymTab:
     def get(self, key):
         return self.__getitem__(key)
 
-
 class Hypergraph(object):
     __d = {}
     # __edge_type = type(tuple)
@@ -91,8 +91,13 @@ class Hypergraph(object):
     def edge_rank(self, n):
         return map(lambda x: tuple(x, len(x)), self.adjByNode(n))
 
+<<<<<<< 482a19615f69307a6e1e57f25cdcaaa43e9b7f46
+    #--solve-limit=<n>[,<m>] : Stop search after <n> conflicts or <m> restarts
+    def largest_clique_asp(self, timeout=10, enum=True, usc=True, ground=True, prevent_k_hyperedge=3, solve_limit="umax,umax"):
+=======
     # --solve-limit=<n>[,<m>] : Stop search after <n> conflicts or <m> restarts
     def largest_clique_asp(self, timeout=10, enum=True, usc=True, ground=True, solve_limit="umax,umax"):
+>>>>>>> Minors + reconstruct decomposition
         if clingo is None:
             raise ImportError()
 
@@ -109,7 +114,7 @@ class Hypergraph(object):
                 if opt > aset[0]:
                     aset[2] = []
                 aset[0] = opt
-                aset[2].append(str(model).translate(None, "u()").split(" "))
+                aset[2].append([safe_int(x) for x in str(model).translate(None, "u()").split(" ")])
 
         aset = [0, False, []]
 
@@ -158,10 +163,16 @@ class Hypergraph(object):
             for e in self.__edges.values():
                 if len(e) <= 2:
                     continue
+<<<<<<< 482a19615f69307a6e1e57f25cdcaaa43e9b7f46
+                #prevent 3 elements from the same edge
+                sub = range(0, prevent_k_hyperedge)
+                while True: #sub[0] <= len(e) - prevent_k_hyperedge:
+=======
                 # prevent 3 elements from the same edge
                 k = 3
                 sub = range(0, k)
                 while True:  # sub[0] <= len(e) - k:
+>>>>>>> Minors + reconstruct decomposition
                     rule = []
                     pos = 0
                     # print sub
@@ -175,14 +186,20 @@ class Hypergraph(object):
                         constr.add(rule)
                         prog += ":- " + ", ".join(("u({0})".format(r) for r in rule)) + ".\n"
 
-                    if sub[0] == len(e) - k:
+                    if sub[0] == len(e) - prevent_k_hyperedge:
                         break
 
+<<<<<<< 482a19615f69307a6e1e57f25cdcaaa43e9b7f46
+                    #next position
+                    for i in xrange(prevent_k_hyperedge - 1, -1, -1):
+                        if sub[i] < len(e) + (i - prevent_k_hyperedge):
+=======
                     # next position
                     for i in xrange(k - 1, -1, -1):
                         if sub[i] < len(e) + (i - k):
+>>>>>>> Minors + reconstruct decomposition
                             sub[i] += 1
-                            for j in xrange(i + 1, k):
+                            for j in xrange(i + 1, prevent_k_hyperedge):
                                 sub[j] = sub[i] + (j - i)
                             break
         if usc:
@@ -246,6 +263,10 @@ class Hypergraph(object):
                                        rhs=[1] * len(constraints))  # ,
         # names=["c{0}".format(x) for x in names])
 
+        problem.set_results_stream(None)
+        problem.set_error_stream(None)
+        problem.set_warning_stream(None)
+        problem.set_log_stream(None)
         problem.solve()
         assert (problem.solution.get_status() == 1)
         return problem.solution.get_objective_value()
