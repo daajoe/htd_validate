@@ -3,6 +3,7 @@
 #
 # Copyright 2017
 # Johannes K. Fichte, TU Wien, Austria*
+# Markus A. Hecher, TU Wien, Austria*
 #
 # *) also affiliated with University of Potsdam(R) :P
 # *) is not allowed to contain parts of nuts ;P
@@ -47,7 +48,7 @@ from pymonad.Reader import curry
 
 from UserString import MutableString
 import threading
-import time
+
 
 class SymTab:
     def __init__(self, offset=0):
@@ -74,7 +75,7 @@ class SymTab:
 
 class Hypergraph(object):
     __d = {}
-    #__edge_type = type(tuple)
+    # __edge_type = type(tuple)
     __edge_type = tuple
 
     def __init__(self, non_numerical=False, vertices=None):
@@ -90,7 +91,7 @@ class Hypergraph(object):
     def edge_rank(self, n):
         return map(lambda x: tuple(x, len(x)), self.adjByNode(n))
 
-    #--solve-limit=<n>[,<m>] : Stop search after <n> conflicts or <m> restarts
+    # --solve-limit=<n>[,<m>] : Stop search after <n> conflicts or <m> restarts
     def largest_clique_asp(self, timeout=10, enum=True, usc=True, ground=True, solve_limit="umax,umax"):
         if clingo is None:
             raise ImportError()
@@ -100,8 +101,8 @@ class Hypergraph(object):
             if len(model.cost) == 0:
                 return
 
-            #print model
-            #print model.cost
+            # print model
+            # print model.cost
             aset[1] |= model.optimality_proven
             opt = abs(model.cost[0])
             if opt >= aset[0]:
@@ -112,19 +113,19 @@ class Hypergraph(object):
 
         aset = [0, False, []]
 
-        #if len(self.__vertices) >= 400:
+        # if len(self.__vertices) >= 400:
         #    return aset
 
-        #aset = [sys.maxint, False, []]
+        # aset = [sys.maxint, False, []]
         c = clingo.Control()
 
         prog = MutableString()
         guess = MutableString()
 
-        #for u in self.__vertices:
-            #prog += "{{ u({0}) }}.\n".format(u)
-            #prog += "#show u({0})/0.\n".format(u)
-            #prog += ":~ not u({0}).[1,u({1})]\n".format(u, u)
+        # for u in self.__vertices:
+        # prog += "{{ u({0}) }}.\n".format(u)
+        # prog += "#show u({0})/0.\n".format(u)
+        # prog += ":~ not u({0}).[1,u({1})]\n".format(u, u)
 
         pos = 0
         if len(self.__vertices) > 0:
@@ -137,7 +138,7 @@ class Hypergraph(object):
 
         prog += guess
 
-        #print len(self.__vertices)
+        # print len(self.__vertices)
         if not ground and len(self.__vertices) > 0 and len(self.__edges) > 0:
             prog += "#show u/1.\n"
             prog += "a(Y1, Y2) :- e(X, Y1), e(X, Y2), Y1 < Y2.\n"
@@ -157,14 +158,14 @@ class Hypergraph(object):
             for e in self.__edges.values():
                 if len(e) <= 2:
                     continue
-                #prevent 3 elements from the same edge
+                # prevent 3 elements from the same edge
                 k = 3
                 sub = range(0, k)
-                while True: #sub[0] <= len(e) - k:
+                while True:  # sub[0] <= len(e) - k:
                     rule = []
                     pos = 0
-                    #print sub
-                    #print e
+                    # print sub
+                    # print e
                     for v in sub:
                         rule.append(e[v])
                         pos += 1
@@ -177,7 +178,7 @@ class Hypergraph(object):
                     if sub[0] == len(e) - k:
                         break
 
-                    #next position
+                    # next position
                     for i in xrange(k - 1, -1, -1):
                         if sub[i] < len(e) + (i - k):
                             sub[i] += 1
@@ -193,19 +194,17 @@ class Hypergraph(object):
             c.configuration.solve.opt_mode = "opt"
         c.configuration.solve.models = 0
         c.configuration.solve.solve_limit = solve_limit
-        #c.configuration.sat_prepro = True
+        # c.configuration.sat_prepro = True
 
-
-        #print str(prog)
-        #print guess
-
+        # print str(prog)
+        # print guess
 
         c.add("prog", [], str(prog))
 
         def solver(c, om):
-            #print "solving"
+            # print "solving"
             c.ground([("prog", [])])
-            #print "grounded"
+            # print "grounded"
             c.solve(on_model=om)
 
         t = threading.Thread(target=solver, args=(c, __on_model(aset)))
@@ -216,9 +215,8 @@ class Hypergraph(object):
 
         aset[1] |= c.statistics["summary"]["models"]["optimal"] > 0
         aset.append(c.statistics)
-        #print c.statistics
+        # print c.statistics
         return aset
-
 
     def fractional_cover(self, verts):
         if cx is None:
@@ -245,11 +243,11 @@ class Hypergraph(object):
 
         problem.linear_constraints.add(lin_expr=constraints,
                                        senses=["G"] * len(constraints),
-                                       rhs=[1] * len(constraints))#,
-                                       #names=["c{0}".format(x) for x in names])
+                                       rhs=[1] * len(constraints))  # ,
+        # names=["c{0}".format(x) for x in names])
 
         problem.solve()
-        assert(problem.solution.get_status() == 1)
+        assert (problem.solution.get_status() == 1)
         return problem.solution.get_objective_value()
         # print problem.solution.get_values()
 
@@ -261,14 +259,14 @@ class Hypergraph(object):
         for e in es:
             self.add_hyperedge([x for x in e if x in self.__vertices])
 
-    #can also contract edge parts >= 2, e[0] is the edge that is kept
+    # can also contract edge parts >= 2, e[0] is the edge that is kept
     def contract_edge(self, e):
-        assert(len(e) >= 2)
+        assert (len(e) >= 2)
         dl = -1
         for (k, v) in self.__edges.iteritems():
             contr = [x for x in v if x not in e]
-            #assert(len(contr) >= 1)
-            if len(contr) == 0: # and contr[0] == e[0]:
+            # assert(len(contr) >= 1)
+            if len(contr) == 0:  # and contr[0] == e[0]:
                 dl = k
             elif (len(contr) + 1 < len(v)) or (len(contr) + 1 == len(v) and e[0] not in v):
                 contr.append(e[0])
@@ -285,14 +283,14 @@ class Hypergraph(object):
         return edges
 
     def edge_rank(self, n):
-        #print self.incident_edges(n).values()
+        # print self.incident_edges(n).values()
         return map(lambda x: (x, len(x)), self.incident_edges(n).values())
 
     # @staticmethod
     # def project_edge(e, p):
     #    return [x for x in e if x not in p]
 
-    #def inc(self,v):
+    # def inc(self,v):
     #    nbh = dict()
     #    for e in self.__edges.values():
     #        if v in e:
@@ -316,19 +314,19 @@ class Hypergraph(object):
         return nbhs
 
     def __delitem__(self, v):
-        #please do not make me copy everything :(
-        #assert(Hypergraph.__edge_type == type(list))
+        # please do not make me copy everything :(
+        # assert(Hypergraph.__edge_type == type(list))
         self.__vertices.remove(v)
-        #del self.__vertices[v]
+        # del self.__vertices[v]
         dl = []
         for k, e in self.__edges.iteritems():
             if v in self.__edges[k]:
-                #thank you, tuple!
-                #del self.__edges[k][v]
+                # thank you, tuple!
+                # del self.__edges[k][v]
                 e = set(e)
                 e.remove(v)
                 self.__edges[k] = Hypergraph.__edge_type(e)
-                #print self.__edges[k]
+                # print self.__edges[k]
                 dl.append((k, e))
         for k, e in dl:
             if len(e) <= 1 or self.isSubsumed(e, modulo=k):
@@ -344,12 +342,12 @@ class Hypergraph(object):
         return iter(self.__edges.values())
 
     # TODO: copy?
-    #@property
+    # @property
     def nodes(self):
         return self.__vertices
 
     # TODO: copy?
-    #@property
+    # @property
     def edges(self):
         return self.__edges
 
@@ -497,9 +495,9 @@ class Hypergraph(object):
                 continue
             elif sx.issubset(e):
                 return True
-            elif checkSubsumes and sx.issuperset(e):  #reset the edge
-                #print sx, e
-                #self.__edges[k][:] = sx
+            elif checkSubsumes and sx.issuperset(e):  # reset the edge
+                # print sx, e
+                # self.__edges[k][:] = sx
                 self.__edges[k] = Hypergraph.__edge_type(sx)
                 return True
         return False

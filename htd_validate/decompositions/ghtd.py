@@ -23,9 +23,7 @@ class GeneralizedHypertreeDecomposition(Decomposition):
         else:
             self.hyperedge_function = hyperedge_function
         if not hypergraph:
-            self.hypergraph = hypergraph
-        else:
-            self.hypergraph = Hypergraph()
+            hypergraph = Hypergraph()
 
         super(GeneralizedHypertreeDecomposition, self).__init__(hypergraph=hypergraph,
                                                                 plot_if_td_invalid=plot_if_td_invalid, tree=tree,

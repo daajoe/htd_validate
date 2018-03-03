@@ -1,11 +1,9 @@
 import logging
-
-import networkx as nx
 from cStringIO import StringIO
 from itertools import count, imap, izip
-from networkx.drawing.nx_agraph import graphviz_layout
 from operator import itemgetter
 
+import networkx as nx
 from htd_validate.decompositions import Decomposition
 from htd_validate.utils import Graph
 
@@ -13,38 +11,10 @@ from htd_validate.utils import Graph
 class TreeDecomposition(Decomposition):
     _problem_string = 'td'
 
-    #bucket elimination algorithm
-    @staticmethod
-    def from_ordering(graph, ordering=None):
-        if ordering is None:
-            ordering = sorted(graph.nodes())
-
-        tree = nx.DiGraph()
-        #use lex smallest, python first compares first pos of tuple
-        smallest = lambda x: min([(ordering.index(xi), xi) for xi in x])
-
-        #initialize with empty bags
-        chi = {v: set() for v in graph.nodes()}
-        tree.add_nodes_from(range(1, graph.number_of_nodes() + 1))
-
-        for e in graph.edges():
-            chi[smallest(e)[1]].update(e)
-
-        for v in ordering:
-            #copy
-            A = set(chi[v]) #- v
-
-            if len(A) > 1:
-                logging.debug("A(before-rem) = %s" %A)
-                A.remove(v)
-                logging.debug("A(after-rem) = %s" %A)
-                nxt = smallest(A)[1]
-                logging.debug("nxt =%s, v=%s, A=%s, chi[nxt]=%s" %(nxt,v,A,chi[nxt]))
-                chi[nxt].update(A)
-                logging.debug("chi[nxt]=%s"%chi[nxt])
-                tree.add_edge(nxt, v)
-
-        return TreeDecomposition(graph, True, tree, chi)
+    # bucket elimination algorithm
+    @classmethod
+    def from_ordering(cls, graph, ordering=None):
+        return cls._from_ordering(hypergraph=graph, ordering=ordering)
 
     @classmethod
     def graph_type(cls):
@@ -126,47 +96,3 @@ class TreeDecomposition(Decomposition):
         root_id = lengths.index(max_bag_size)
         return bagids2lengths.keys()[root_id]
 
-    def show(self, layout, nolabel=0):
-        """ show hypergraph
-        layout 1:graphviz,
-        2:circular,
-        3:spring,
-        4:spectral,
-        5: random,
-        6: shell
-        """
-        if not self.plot_if_td_invalid:
-            logging.error('written_decomp(tree)=%s', self.tree.edges())
-            logging.error('written_decomp(bags)=%s', self.bags)
-
-            return
-        else:
-            import matplotlib.pyplot as plt
-            import matplotlib
-
-            matplotlib.use('TkAgg')
-
-            m = self.tree.copy()
-            pos = graphviz_layout(m)
-            if layout == 1:
-                pos = graphviz_layout(m)
-            elif layout == 2:
-                pos = nx.circular_layout(m)
-            elif layout == 3:
-                pos = nx.spring_layout(m)
-            elif layout == 4:
-                pos = nx.spectral_layout(m)
-            elif layout == 5:
-                pos = nx.random_layout(m)
-            elif layout == 6:
-                pos = nx.shell_layout(m)
-            if not nolabel:
-                nx.draw_networkx_edge_labels(m, pos)
-            nx.draw_networkx_nodes(m, pos)
-            if self.bags:
-                bags = {k: '%s:%s' % (k, str(sorted(list(v)))) for k, v in self.bags.iteritems()}
-                nx.draw_networkx_labels(m, pos, bags)
-            else:
-                nx.draw_networkx_labels(m, pos)
-            nx.draw(m, pos)
-            plt.show()

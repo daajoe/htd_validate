@@ -2,7 +2,7 @@ import logging
 from cStringIO import StringIO
 
 import networkx as nx
-from htd_validate.decompositions import GeneralizedHypertreeDecomposition, TreeDecomposition
+from htd_validate.decompositions import GeneralizedHypertreeDecomposition
 from htd_validate.utils import Hypergraph, HypergraphPrimalView
 
 
@@ -14,8 +14,10 @@ class FractionalHypertreeDecomposition(GeneralizedHypertreeDecomposition):
     def decomposition_type():
         pass
 
-    @staticmethod
-    def from_ordering(hypergraph, ordering=None, weights=None):
+    @classmethod
+    def from_ordering(cls, hypergraph, ordering=None, weights=None):
+        logging.info("Constructing Decomposition from ordering")
+
         if ordering is None:
             ordering = sorted(hypergraph.nodes())
         if len(ordering) == 1:
@@ -28,11 +30,18 @@ class FractionalHypertreeDecomposition(GeneralizedHypertreeDecomposition):
         logging.debug("Ordering: %s" % ordering)
 
         pgraph_view = HypergraphPrimalView(hypergraph=hypergraph)
-        pgraph_decomp = TreeDecomposition.from_ordering(graph=pgraph_view, ordering=ordering)
-        fhtd = FractionalHypertreeDecomposition(hypergraph=hypergraph, plot_if_td_invalid=True, tree=pgraph_decomp.T,
-                                                bags=pgraph_decomp.bags, hyperedge_function=weights)
-        logging.info("==== Computed Fhtd: ====")
-        logging.info("Fhtd: edges=%s ; bags=%s; weights=%s" % (fhtd.T.edges(), fhtd.chi, fhtd.hyperedge_function))
+        fhtd = cls._from_ordering(hypergraph=pgraph_view, plot_if_td_invalid=True, ordering=ordering, weights=weights)
+
+        logging.debug("==== Computed Fhtd: ====")
+        logging.debug("Fhtd: edges=%s ; bags=%s; weights=%s" % (fhtd.T.edges(), fhtd.chi, fhtd.hyperedge_function))
+        logging.info("WIDTH = %s" % fhtd.width())
+
+        # TODO: simplify decomposition
+
+        valid = fhtd.validate(hypergraph)
+        logging.warning("VALID Decomp = %s" % valid)
+        if not valid:
+            exit(42)
         return fhtd
 
     # @staticmethod
@@ -65,6 +74,7 @@ class FractionalHypertreeDecomposition(GeneralizedHypertreeDecomposition):
             return True
         else:
             logging.error('ERROR in Tree Decomposition.')
+            self.show(layout=1)
             return False
 
     def __str__(self):
