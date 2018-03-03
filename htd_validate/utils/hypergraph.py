@@ -48,8 +48,12 @@ from pymonad.Reader import curry
 
 from UserString import MutableString
 import threading
+<<<<<<< 2fac4a2263a1210bee10c350224b94b3f4a2766a
+
+=======
 import time
 from htd_validate.utils.integer import safe_int
+>>>>>>> improved clique detection
 
 class SymTab:
     def __init__(self, offset=0):
@@ -91,13 +95,13 @@ class Hypergraph(object):
     def edge_rank(self, n):
         return map(lambda x: tuple(x, len(x)), self.adjByNode(n))
 
-<<<<<<< 482a19615f69307a6e1e57f25cdcaaa43e9b7f46
-    #--solve-limit=<n>[,<m>] : Stop search after <n> conflicts or <m> restarts
-    def largest_clique_asp(self, timeout=10, enum=True, usc=True, ground=True, prevent_k_hyperedge=3, solve_limit="umax,umax"):
-=======
+<<<<<<< 2fac4a2263a1210bee10c350224b94b3f4a2766a
     # --solve-limit=<n>[,<m>] : Stop search after <n> conflicts or <m> restarts
     def largest_clique_asp(self, timeout=10, enum=True, usc=True, ground=True, solve_limit="umax,umax"):
->>>>>>> Minors + reconstruct decomposition
+=======
+    #--solve-limit=<n>[,<m>] : Stop search after <n> conflicts or <m> restarts
+    def largest_clique_asp(self, timeout=10, enum=True, usc=True, ground=True, prevent_k_hyperedge=3, solve_limit="umax,umax"):
+>>>>>>> improved clique detection
         if clingo is None:
             raise ImportError()
 
@@ -163,16 +167,16 @@ class Hypergraph(object):
             for e in self.__edges.values():
                 if len(e) <= 2:
                     continue
-<<<<<<< 482a19615f69307a6e1e57f25cdcaaa43e9b7f46
-                #prevent 3 elements from the same edge
-                sub = range(0, prevent_k_hyperedge)
-                while True: #sub[0] <= len(e) - prevent_k_hyperedge:
-=======
+<<<<<<< 2fac4a2263a1210bee10c350224b94b3f4a2766a
                 # prevent 3 elements from the same edge
                 k = 3
                 sub = range(0, k)
                 while True:  # sub[0] <= len(e) - k:
->>>>>>> Minors + reconstruct decomposition
+=======
+                #prevent 3 elements from the same edge
+                sub = range(0, prevent_k_hyperedge)
+                while True: #sub[0] <= len(e) - prevent_k_hyperedge:
+>>>>>>> improved clique detection
                     rule = []
                     pos = 0
                     # print sub
@@ -189,15 +193,15 @@ class Hypergraph(object):
                     if sub[0] == len(e) - prevent_k_hyperedge:
                         break
 
-<<<<<<< 482a19615f69307a6e1e57f25cdcaaa43e9b7f46
-                    #next position
-                    for i in xrange(prevent_k_hyperedge - 1, -1, -1):
-                        if sub[i] < len(e) + (i - prevent_k_hyperedge):
-=======
+<<<<<<< 2fac4a2263a1210bee10c350224b94b3f4a2766a
                     # next position
                     for i in xrange(k - 1, -1, -1):
                         if sub[i] < len(e) + (i - k):
->>>>>>> Minors + reconstruct decomposition
+=======
+                    #next position
+                    for i in xrange(prevent_k_hyperedge - 1, -1, -1):
+                        if sub[i] < len(e) + (i - prevent_k_hyperedge):
+>>>>>>> improved clique detection
                             sub[i] += 1
                             for j in xrange(i + 1, prevent_k_hyperedge):
                                 sub[j] = sub[i] + (j - i)
