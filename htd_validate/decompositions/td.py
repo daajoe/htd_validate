@@ -52,8 +52,8 @@ class TreeDecomposition(Decomposition):
     def graph_type(cls):
         return Graph.__name__
 
-    def __init__(self, plot_if_td_invalid=False, tree=None, bags=None, graph=None):
-        super.__call__(TreeDecomposition, self).__init__(tree, bags, graph)
+    def __init__(self, plot_if_td_invalid=False, tree=None, bags=None, hypergraph=None):
+        super.__call__(TreeDecomposition, self).__init__(tree, bags, hypergraph)
         self.plot_if_td_invalid = plot_if_td_invalid
 
     @staticmethod

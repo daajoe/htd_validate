@@ -26,14 +26,14 @@ class Decomposition(object):
     @property
     def graph(self): return self.hypergraph
 
-    def __init__(self, tree=None, bags=None, graph=None):
+    def __init__(self, tree=None, bags=None, hypergraph=None):
         if tree is None:
             tree = nx.DiGraph()
         if bags is None:
             bags = {}
         self.tree = tree
         self.bags = bags
-        self.hypergraph = graph
+        self.hypergraph = hypergraph
 
     @staticmethod
     def graph_type():
