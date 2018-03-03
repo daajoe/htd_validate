@@ -2,8 +2,8 @@ import logging
 from cStringIO import StringIO
 
 import networkx as nx
-from htd_validate.decompositions import GeneralizedHypertreeDecomposition
-from htd_validate.utils import Hypergraph
+from htd_validate.decompositions import GeneralizedHypertreeDecomposition, TreeDecomposition
+from htd_validate.utils import Hypergraph, HypergraphPrimalView
 
 
 class FractionalHypertreeDecomposition(GeneralizedHypertreeDecomposition):
@@ -18,35 +18,22 @@ class FractionalHypertreeDecomposition(GeneralizedHypertreeDecomposition):
     def from_ordering(hypergraph, ordering=None, weights=None):
         if ordering is None:
             ordering = sorted(hypergraph.nodes())
+        if len(ordering) == 1:
+            tree = nx.DiGraph()
+            tree.add_node(1)
+            chi = {1: ordering[0]}
+            return FractionalHypertreeDecomposition(hypergraph=hypergraph, plot_if_td_invalid=True, tree=tree, bags=chi,
+                                                    hyperedge_function=weights)
+
         logging.debug("Ordering: %s" % ordering)
 
-        tree = nx.DiGraph()
-        # use lex smallest, python first compares first pos of tuple
-        smallest = lambda x: min([(ordering.index(xi), xi) for xi in x])
-
-        # initialize with empty bags
-        chi = {v: set() for v in hypergraph.nodes()}
-        tree.add_nodes_from(range(1, hypergraph.number_of_nodes() + 1))
-
-        for e in hypergraph.edges():
-            chi[smallest(e)[1]].update(e)
-
-        for v in ordering:
-            # copy
-            A = set(chi[v])  # - v
-
-            if len(A) > 1:
-                logging.debug("A(pre-rem) = %s" % A)
-                A.remove(v)
-                logging.debug("A(post-rem) =%s" % A)
-                nxt = smallest(A)[1]
-                logging.debug("nxt= %s,v=%s,A=%s,chi[nxt]=%s" % (nxt, v, A, chi[nxt]))
-                chi[nxt].update(A)
-                logging.debug("chi[nxt]=%s" % chi[nxt])
-                tree.add_edge(nxt, v)
-
-        return FractionalHypertreeDecomposition(plot_if_td_invalid=True, tree=tree, bags=chi, hypergraph=hypergraph,
-                                                hyperedge_function=weights)
+        pgraph_view = HypergraphPrimalView(hypergraph=hypergraph)
+        pgraph_decomp = TreeDecomposition.from_ordering(graph=pgraph_view, ordering=ordering)
+        fhtd = FractionalHypertreeDecomposition(hypergraph=hypergraph, plot_if_td_invalid=True, tree=pgraph_decomp.T,
+                                                bags=pgraph_decomp.bags, hyperedge_function=weights)
+        logging.info("==== Computed Fhtd: ====")
+        logging.info("Fhtd: edges=%s ; bags=%s; weights=%s" % (fhtd.T.edges(), fhtd.chi, fhtd.hyperedge_function))
+        return fhtd
 
     # @staticmethod
     # def _reader(decomp, line):
@@ -59,9 +46,12 @@ class FractionalHypertreeDecomposition(GeneralizedHypertreeDecomposition):
     def graph_type():
         return Hypergraph.__name__
 
-    def __init__(self, plot_if_td_invalid=False, tree=None, bags=None, hypergraph=None, hyperedge_function=None):
-        super(FractionalHypertreeDecomposition, self).__init__(tree, bags, hypergraph, hyperedge_function)
+    def __init__(self, hypergraph=None, plot_if_td_invalid=False, tree=None, bags=None, hyperedge_function=None):
+        super(FractionalHypertreeDecomposition, self).__init__(hypergraph=hypergraph,
+                                                               plot_if_td_invalid=plot_if_td_invalid, tree=tree,
+                                                               bags=bags, hyperedge_function=hyperedge_function)
         self.plot_if_td_invalid = plot_if_td_invalid
+        logging.debug('edges = %s' % self.tree.edges())
 
     def __len__(self):
         return len(self.bags)
@@ -69,7 +59,6 @@ class FractionalHypertreeDecomposition(GeneralizedHypertreeDecomposition):
     # TODO: reading allow floats as well insteat of just integers
     # TODO: technically the same as ghtd, but we skip the integer check
     def validate(self, graph):
-        print self.edge_function_holds()
         self.hypergraph = graph
         if self.edges_covered() and self.is_connected() and self.edge_function_holds() and \
                 self.edge_function_holds():

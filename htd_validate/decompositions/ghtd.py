@@ -1,4 +1,5 @@
 import logging
+import sys
 from cStringIO import StringIO
 from collections import defaultdict
 from itertools import count, imap, izip
@@ -16,7 +17,7 @@ class GeneralizedHypertreeDecomposition(Decomposition):
     def graph_type():
         return Hypergraph.__name__
 
-    def __init__(self, plot_if_td_invalid=False, tree=None, bags=None, hypergraph=None, hyperedge_function=None):
+    def __init__(self, hypergraph=None, plot_if_td_invalid=False, tree=None, bags=None, hyperedge_function=None):
         if not hyperedge_function:
             self.hyperedge_function = defaultdict(dict)
         else:
@@ -26,7 +27,9 @@ class GeneralizedHypertreeDecomposition(Decomposition):
         else:
             self.hypergraph = Hypergraph()
 
-        super(GeneralizedHypertreeDecomposition, self).__init__(tree=tree, bags=bags, hypergraph=hypergraph)
+        super(GeneralizedHypertreeDecomposition, self).__init__(hypergraph=hypergraph,
+                                                                plot_if_td_invalid=plot_if_td_invalid, tree=tree,
+                                                                bags=bags)
 
     def __len__(self):
         return len(self.bags)
@@ -69,7 +72,7 @@ class GeneralizedHypertreeDecomposition(Decomposition):
         if header['max_function_value'] != decomp.width():
             logging.error(
                 'Given width is wrong. Computed width %s, given width %s \n' % (
-                decomp.width(), header['max_function_value']))
+                    decomp.width(), header['max_function_value']))
             exit(2)
 
     # TODO: detect format from file header
@@ -120,7 +123,7 @@ class GeneralizedHypertreeDecomposition(Decomposition):
             logging.error('ERROR in Tree Decomposition.')
             return False
 
-    def write(self, ostream):
+    def write(self, ostream=sys.stdout):
         tree_mapping = {org_id: id for id, org_id in izip(count(start=1), self.tree.nodes_iter())}
         tree = nx.relabel_nodes(self.tree, tree_mapping, copy=True)
         num_vertices = reduce(lambda x, y: max(x, max(y or [0])), self.bags.itervalues(), 0)

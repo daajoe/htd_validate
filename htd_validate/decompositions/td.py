@@ -15,21 +15,19 @@ class TreeDecomposition(Decomposition):
 
     #bucket elimination algorithm
     @staticmethod
-    def from_ordering(g, ordering=None):
+    def from_ordering(graph, ordering=None):
         if ordering is None:
-            ordering = sorted(g.nodes())
-
-        #print ordering
+            ordering = sorted(graph.nodes())
 
         tree = nx.DiGraph()
         #use lex smallest, python first compares first pos of tuple
         smallest = lambda x: min([(ordering.index(xi), xi) for xi in x])
 
         #initialize with empty bags
-        chi = {v: set() for v in g.nodes()}
-        tree.add_nodes_from(range(1, g.number_of_nodes() + 1))
+        chi = {v: set() for v in graph.nodes()}
+        tree.add_nodes_from(range(1, graph.number_of_nodes() + 1))
 
-        for e in g.edges():
+        for e in graph.edges():
             chi[smallest(e)[1]].update(e)
 
         for v in ordering:
@@ -37,23 +35,23 @@ class TreeDecomposition(Decomposition):
             A = set(chi[v]) #- v
 
             if len(A) > 1:
-                #print A
+                logging.debug("A(before-rem) = %s" %A)
                 A.remove(v)
-                #print A
+                logging.debug("A(after-rem) = %s" %A)
                 nxt = smallest(A)[1]
-                #print nxt,v,A,chi[nxt]
+                logging.debug("nxt =%s, v=%s, A=%s, chi[nxt]=%s" %(nxt,v,A,chi[nxt]))
                 chi[nxt].update(A)
-                #print chi[nxt]
+                logging.debug("chi[nxt]=%s"%chi[nxt])
                 tree.add_edge(nxt, v)
 
-        return TreeDecomposition(True, tree, chi, g)
+        return TreeDecomposition(graph, True, tree, chi)
 
     @classmethod
     def graph_type(cls):
         return Graph.__name__
 
-    def __init__(self, plot_if_td_invalid=False, tree=None, bags=None, hypergraph=None):
-        super.__call__(TreeDecomposition, self).__init__(tree, bags, hypergraph)
+    def __init__(self, hypergraph=None, plot_if_td_invalid=False, tree=None, bags=None):
+        super(TreeDecomposition, self).__init__(hypergraph=hypergraph, tree=tree, bags=bags)
         self.plot_if_td_invalid = plot_if_td_invalid
 
     @staticmethod
