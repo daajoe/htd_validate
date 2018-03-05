@@ -370,10 +370,14 @@ class HypergraphPrimalView(object): #(nx.graph): #https://networkx.github.io/doc
     #handle with care!
     #returns tuple (list of "almost" (depending on \emph{simplicial_diff}) simplicial vertices, clique) per clique
     #fixme: modify/replace nx.enumerate_all_cliques!
-    def simplicial_iter(self, simplicial_diff=0, clique_sizes_at_least=3, clique_sizes_up_to=5, max_clique=True):
+    def simplicial_iter(self, simplicial_diff=0, clique_prevent_he_at_least=3, clique_prevent_he_up_to=3):
         maxcl = 0
+        c = None
+        for k in xrange(clique_prevent_he_up_to, clique_prevent_he_at_least - 1, -1):
+            aset = self.__hg.largest_clique_asp(clingoctl=c, prevent_k_hyperedge=k)
+            c = aset[3]
         #for clique in nx.enumerate_all_cliques(self) if not max_clique else self.__hg.largest_clique_asp()[2]:
-        for clique in self.__hg.largest_clique_asp(prevent_k_hyperedge=5)[2] if not max_clique else self.__hg.largest_clique_asp()[2]:
+        for clique in lse self.__hg.largest_clique_asp()[2]:
             if not max_clique and len(clique) > clique_sizes_up_to:
                 return
             maxcl = max(maxcl, len(clique))

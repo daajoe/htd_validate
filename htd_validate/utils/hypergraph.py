@@ -91,7 +91,7 @@ class Hypergraph(object):
         return map(lambda x: tuple(x, len(x)), self.adjByNode(n))
 
     #--solve-limit=<n>[,<m>] : Stop search after <n> conflicts or <m> restarts
-    def largest_clique_asp(self, timeout=10, enum=True, usc=True, ground=True, prevent_k_hyperedge=3, solve_limit="umax,umax"):
+    def largest_clique_asp(self, clingoctl=None, timeout=10, enum=True, usc=True, ground=True, prevent_k_hyperedge=3, solve_limit="umax,umax"):
         if clingo is None:
             raise ImportError()
 
@@ -100,8 +100,6 @@ class Hypergraph(object):
             if len(model.cost) == 0:
                 return
 
-            #print model
-            #print model.cost
             aset[1] |= model.optimality_proven
             opt = abs(model.cost[0])
             if opt >= aset[0]:
@@ -110,49 +108,59 @@ class Hypergraph(object):
                 aset[0] = opt
                 aset[2].append([safe_int(x) for x in str(model).translate(None, "u()").split(" ")])
 
-        aset = [0, False, []]
-
-        #if len(self.__vertices) >= 400:
-        #    return aset
-
-        #aset = [sys.maxint, False, []]
-        c = clingo.Control()
-
         prog = MutableString()
-        guess = MutableString()
 
-        #for u in self.__vertices:
-            #prog += "{{ u({0}) }}.\n".format(u)
-            #prog += "#show u({0})/0.\n".format(u)
-            #prog += ":~ not u({0}).[1,u({1})]\n".format(u, u)
+        if clingoctl is None:
+            c = clingo.Control()
 
-        pos = 0
-        if len(self.__vertices) > 0:
-            guess += "{"
-            prog += "#maximize {"
-            for u in self.__vertices:
-                prog += " 1,u({0}):u({1}){2}".format(u, u, " }.\n" if pos == len(self.__vertices) - 1 else ";")
-                guess += " u({0}){1}".format(u, " }.\n" if pos == len(self.__vertices) - 1 else ";")
-                pos += 1
+            if usc:
+                c.configuration.solver.opt_strategy = "usc,pmres,disjoint,stratify"
+                c.configuration.solver.opt_usc_shrink = "min"
+            c.configuration.solve.opt_mode = "optN" if enum else "opt"
+            c.configuration.solve.models = 0
+            c.configuration.solve.solve_limit = solve_limit
 
-        prog += guess
+            guess = MutableString()
+            pos = 0
+            if len(self.__vertices) > 0:
+                guess += "{"
+                prog += "#maximize {"
+                for u in self.__vertices:
+                    prog += " 1,u({0}):u({1}){2}".format(u, u, " }.\n" if pos == len(self.__vertices) - 1 else ";")
+                    guess += " u({0}){1}".format(u, " }.\n" if pos == len(self.__vertices) - 1 else ";")
+                    pos += 1
 
-        #print len(self.__vertices)
-        if not ground and len(self.__vertices) > 0 and len(self.__edges) > 0:
             prog += "#show u/1.\n"
-            prog += "a(Y1, Y2) :- e(X, Y1), e(X, Y2), Y1 < Y2.\n"
-            prog += ":- u(Y1), u(Y2), not a(Y1, Y2), Y1 < Y2.\n"
-            prog += ":- e(X, Y1), e(X, Y2), e(X, Y3), u(Y1), u(Y2), u(Y3), Y1 < Y2, Y2 < Y3."
-            for k, e in self.__edges.iteritems():
-                for v in e:
-                    prog += "e({0}, {1}).\n".format(k, v)
-        else:
-            adj = self.adj
-            for u in self.__vertices:
-                for v in self.__vertices:
-                    if u < v and v not in adj[u]:
-                        prog += ":- u({0}), u({1}).\n".format(u, v)
+            prog += guess
 
+            #has to be clique
+            if len(self.__edges) > 0:
+                if not ground:
+                    prog += ":- u(Y1), u(Y2), not a(Y1, Y2), Y1 < Y2.\n"
+                    prog += "a(Y1, Y2) :- e(X, Y1), e(X, Y2), Y1 < Y2.\n"
+                    for k, e in self.__edges.iteritems():
+                        for v in e:
+                            prog += "e({0}, {1}).\n".format(k, v)
+                else:
+                    adj = self.adj
+                    for u in self.__vertices:
+                        for v in self.__vertices:
+                            if u < v and v not in adj[u]:
+                                prog += ":- u({0}), u({1}).\n".format(u, v)
+        else:
+            c = clingoctl
+
+        aset = [0, False, [], c, []]
+
+        if not ground and len(self.__edges) > 0:
+            prog += ":- "
+            for i in xrange(0, prevent_k_hyperedge):
+                if i > 0:
+                    prog += ", Y{0} < Y{1}, ".format(i - 1, i)
+                prog += "e(X, Y{0}), u(Y{0})".format(i)
+            prog += ".\n"
+            #prog += ":- e(X, Y1), e(X, Y2), e(X, Y3), u(Y1), u(Y2), u(Y3), Y1 < Y2, Y2 < Y3."
+        else:
             constr = set()
             for e in self.__edges.values():
                 if len(e) <= 2:
@@ -162,8 +170,7 @@ class Hypergraph(object):
                 while True: #sub[0] <= len(e) - prevent_k_hyperedge:
                     rule = []
                     pos = 0
-                    #print sub
-                    #print e
+                    #print sub, e
                     for v in sub:
                         rule.append(e[v])
                         pos += 1
@@ -183,26 +190,10 @@ class Hypergraph(object):
                             for j in xrange(i + 1, prevent_k_hyperedge):
                                 sub[j] = sub[i] + (j - i)
                             break
-        if usc:
-            c.configuration.solver.opt_strategy = "usc,pmres,disjoint,stratify"
-            c.configuration.solver.opt_usc_shrink = "min"
-        if enum:
-            c.configuration.solve.opt_mode = "optN"
-        else:
-            c.configuration.solve.opt_mode = "opt"
-        c.configuration.solve.models = 0
-        c.configuration.solve.solve_limit = solve_limit
-        #c.configuration.sat_prepro = True
-
-
-        #print str(prog)
-        #print guess
-
 
         c.add("prog", [], str(prog))
 
         def solver(c, om):
-            #print "solving"
             c.ground([("prog", [])])
             #print "grounded"
             c.solve(on_model=om)
@@ -214,7 +205,7 @@ class Hypergraph(object):
         t.join()
 
         aset[1] |= c.statistics["summary"]["models"]["optimal"] > 0
-        aset.append(c.statistics)
+        aset[4] = c.statistics
         #print c.statistics
         return aset
 
