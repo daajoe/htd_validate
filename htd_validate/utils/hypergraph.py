@@ -132,9 +132,8 @@ class Hypergraph(object):
                     prog += " 1,u({0}):u({1}){2}".format(u, u, " }.\n" if pos == len(self.__vertices) - 1 else ";")
                     guess += " u({0}){1}".format(u, " }.\n" if pos == len(self.__vertices) - 1 else ";")
                     pos += 1
-
-            prog += "#show u/1.\n"
-            prog += guess
+                prog += "#show u/1.\n"
+                prog += guess
 
             #has to be clique
             if len(self.__edges) > 0:
@@ -194,6 +193,7 @@ class Hypergraph(object):
                                 sub[j] = sub[i] + (j - i)
                             break
 
+        print(prog)
         c.add("prog{0}".format(prevent_k_hyperedge), [], str(prog))
 
         def solver(c, om):
