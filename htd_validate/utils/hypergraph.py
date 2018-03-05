@@ -91,7 +91,7 @@ class Hypergraph(object):
         return map(lambda x: tuple(x, len(x)), self.adjByNode(n))
 
     #--solve-limit=<n>[,<m>] : Stop search after <n> conflicts or <m> restarts
-    def largest_clique_asp(self, clingoctl=None, timeout=10, enum=True, usc=True, ground=True, prevent_k_hyperedge=3, solve_limit="umax,umax"):
+    def largest_clique_asp(self, clingoctl=None, timeout=10, enum=True, usc=True, ground=False, prevent_k_hyperedge=3, solve_limit="umax,umax"):
         if clingo is None:
             raise ImportError()
 
@@ -99,14 +99,17 @@ class Hypergraph(object):
         def __on_model(aset, model):
             if len(model.cost) == 0:
                 return
-
+            #print model, model.cost, model.optimality_proven
             aset[1] |= model.optimality_proven
             opt = abs(model.cost[0])
             if opt >= aset[0]:
                 if opt > aset[0]:
                     aset[2] = []
                 aset[0] = opt
-                aset[2].append([safe_int(x) for x in str(model).translate(None, "u()").split(" ")])
+                answer_set = [safe_int(x) for x in str(model).translate(None, "u()").split(" ")]
+                #might get "fake" duplicates :(, with different model.optimality_proven
+                if answer_set not in aset[2][-1:]:
+                    aset[2].append(answer_set)
 
         prog = MutableString()
 
@@ -163,7 +166,7 @@ class Hypergraph(object):
         else:
             constr = set()
             for e in self.__edges.values():
-                if len(e) <= 2:
+                if len(e) <= 2 or len(e) < prevent_k_hyperedge:
                     continue
                 #prevent 3 elements from the same edge
                 sub = range(0, prevent_k_hyperedge)
@@ -191,10 +194,10 @@ class Hypergraph(object):
                                 sub[j] = sub[i] + (j - i)
                             break
 
-        c.add("prog", [], str(prog))
+        c.add("prog{0}".format(prevent_k_hyperedge), [], str(prog))
 
         def solver(c, om):
-            c.ground([("prog", [])])
+            c.ground([("prog{0}".format(prevent_k_hyperedge), [])])
             #print "grounded"
             c.solve(on_model=om)
 
