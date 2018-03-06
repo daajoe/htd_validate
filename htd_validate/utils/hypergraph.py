@@ -154,6 +154,9 @@ class Hypergraph(object):
 
         aset = [0, False, [], c, []]
 
+        if len(self.__edges) == 0 or len(self.__vertices) == 0:
+            return aset
+
         if not ground and len(self.__edges) > 0:
             prog += ":- "
             for i in xrange(0, prevent_k_hyperedge):
