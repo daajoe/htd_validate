@@ -193,7 +193,8 @@ class Hypergraph(object):
                                 sub[j] = sub[i] + (j - i)
                             break
 
-        print(prog)
+        #print "XX, ", self.__edges, self.__vertices
+        #print(prog)
         c.add("prog{0}".format(prevent_k_hyperedge), [], str(prog))
 
         def solver(c, om):
@@ -262,17 +263,26 @@ class Hypergraph(object):
     def contract_edge(self, e):
         assert(len(e) >= 2)
         dl = -1
+        excl = 0
         for (k, v) in self.__edges.iteritems():
             contr = [x for x in v if x not in e]
             #assert(len(contr) >= 1)
             if len(contr) == 0: # and contr[0] == e[0]:
                 dl = k
             elif (len(contr) + 1 < len(v)) or (len(contr) + 1 == len(v) and e[0] not in v):
+                excl = 1
                 contr.append(e[0])
-                self.__edges[k] = Hypergraph.__edge_type(contr)
+                ex = Hypergraph.__edge_type(contr)
+                if self.isSubsumed(set(ex), modulo=k):
+                    dl = k
+                else:
+                    self.__edges[k] = ex
+            elif e[0] in v:
+                excl = 1
         if dl >= 0:
             del self.__edges[dl]
-        self.__vertices.difference_update(e[1:])
+        self.__vertices.difference_update(e[excl:])
+
 
     def incident_edges(self, v):
         edges = {}
@@ -406,6 +416,7 @@ class Hypergraph(object):
                     collect = []
                 elif char != ')':
                     collect.append(char)
+            #print(edge_vertices)
             HG.add_hyperedge(edge_vertices, name=edge_name)
         return HG
 
@@ -473,10 +484,12 @@ class Hypergraph(object):
         return v
 
     def add_hyperedge(self, X, name=None):
+        #print name
         if len(X) <= 1:
             return
         if self.__non_numerical:
             X = map(self.__nsymtab.get, X)
+        #print X
         edge_id = len(self.__edges) + 1
 
         if self.__non_numerical and name is not None:
@@ -486,6 +499,8 @@ class Hypergraph(object):
         if not self.isSubsumed(set(X), checkSubsumes=True):
             self.__edges[edge_id] = Hypergraph.__edge_type(X)
             self.__vertices.update(X)
+        #else:
+        #    print("subsumed: ", X)
         return X
 
     def isSubsumed(self, sx, checkSubsumes=False, modulo=-1):
@@ -498,6 +513,7 @@ class Hypergraph(object):
                 #print sx, e
                 #self.__edges[k][:] = sx
                 self.__edges[k] = Hypergraph.__edge_type(sx)
+                self.__vertices.update(sx)
                 return True
         return False
 

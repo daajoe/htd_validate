@@ -60,6 +60,10 @@ class TestHypergraph(vtd.ValidateGraphTestCase):
                                     fischl_format=True, ground=False)
         self.maxCliqueFromFile(mx, self.filePath("testHG/") + "C13_7.edge")
 
+        self.maxCliqueFromFile(mx, self.filePath("../../../../../hypergraphs/hyperbench/cq/tpch-manual-q10.hg"), fischl_format=True)
+        self.maxCliqueFromFile(mx, self.filePath("../../../../../hypergraphs/hyperbench/cq/tpch-manual-q10.hg"), fischl_format=True)
+
+        #self.assertFalse(True)
         doRealLifeTests = False
         if doRealLifeTests:
             self.mapBenchmarks("../../../../../hypergraphs/hyperbench/", lambda args: self.maxCliqueFromFile(**args),
