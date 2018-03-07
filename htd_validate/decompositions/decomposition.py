@@ -69,8 +69,9 @@ class Decomposition(object):
             for t in self.tree.nodes():
                 if self.bags[t].issuperset(parent):
                     t2 = self.tree.number_of_nodes() + 1
-                    self.bags[t2] = bag
                     self.tree.add_edge(t, t2)
+                    self.bags[t2] = set(bag)
+                    self.bags[t2].update(parent)
 
     def __init__(self, hypergraph=None, plot_if_td_invalid=True, tree=None, bags=None, hyperedge_function=None):
         if tree is None:
