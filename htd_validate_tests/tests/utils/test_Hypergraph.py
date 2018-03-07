@@ -39,8 +39,8 @@ class TestHypergraph(vtd.ValidateGraphTestCase):
         hg = self.loadFile(self.filePath("testHG/") + "C4.edge")
         self.assertEqual(2.0, hg.fractional_cover([1, 2, 3, 4]))
 
-    def maxCliqueFromFile(self, maxC, path, fischl_format=False, ground=False):
-        hg = self.loadFile(path, fischl_format=fischl_format)
+    def maxCliqueFromFile(self, maxC, fil, fischl_format=False, ground=False):
+        hg = self.loadFile(fil, fischl_format=fischl_format)
         self.assertIsNotNone(hg)
         #if len(hg.nodes()) >= 400:
         #    return
@@ -56,25 +56,19 @@ class TestHypergraph(vtd.ValidateGraphTestCase):
 
     def testLargestClique(self):
         mx = [0, 0]
-        self.maxCliqueFromFile(mx, self.filePath("../../../../../hypergraphs/hyperbench/csp_application/") + "Nonogram-001-table.xml.hg",
+        self.maxCliqueFromFile(mx, self.filePath("testHG/") + "Nonogram-001-table.xml.hg",
                                     fischl_format=True, ground=False)
         self.maxCliqueFromFile(mx, self.filePath("testHG/") + "C13_7.edge")
 
-        self.maxCliqueFromFile(mx, self.filePath("../../../../../hypergraphs/hyperbench/cq/tpch-manual-q10.hg"), fischl_format=True)
-        self.maxCliqueFromFile(mx, self.filePath("../../../../../hypergraphs/hyperbench/cq/tpch-manual-q10.hg"), fischl_format=True)
-
-        #self.assertFalse(True)
         doRealLifeTests = False
         if doRealLifeTests:
-            self.mapBenchmarks("../../../../../hypergraphs/hyperbench/", lambda args: self.maxCliqueFromFile(**args),
-                               {"maxC": mx, "fischl_format": True, "ground": False})
             #path, dirs, files
-            #for path, dirs, _ in os.walk(self.filePath("../../../../../hypergraphs/hyperbench/")):
-            #    #print dirs
-            #    for d in dirs:
-            #        for _, _, files in os.walk(os.path.join(path, d)):
-            #            for f in files:
-            #                print d + "/" + f
-            #                self.maxCliqueFromFile(mx, self.filePath("../../../../../hypergraphs/hyperbench/" + d + "/") + f,
-            #                                        fischl_format=True, ground=False)
+            for path, dirs, _ in os.walk(self.filePath("../../../../../../hypergraphs/hyperbench/")):
+                #print dirs
+                for d in dirs:
+                    for _, _, files in os.walk(os.path.join(path, d)):
+                        for f in files:
+                            print d + "/" + f
+                            self.maxCliqueFromFile(mx, self.filePath("../../../../../../hypergraphs/hyperbench/" + d + "/") + f,
+                                                    fischl_format=True, ground=False)
         print mx

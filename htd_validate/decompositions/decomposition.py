@@ -1,11 +1,13 @@
 import logging
 import os
 import traceback
+from cStringIO import StringIO
 from collections import defaultdict
+from itertools import chain
 
 import networkx as nx
-from cStringIO import StringIO
-from itertools import chain
+from htd_validate.utils import HypergraphPrimalView
+from networkx.drawing.nx_agraph import graphviz_layout
 
 
 class Decomposition(object):
@@ -15,25 +17,65 @@ class Decomposition(object):
     def __new__(cls, *args, **kwargs):
         if cls is Decomposition:
             raise TypeError("base class may not be instantiated")
-        return object.__new__(cls, *args, **kwargs)
+        return object.__new__(cls)
 
     @property
-    def chi(self): return self.bags
+    def chi(self):
+        return self.bags
 
     @property
-    def T(self): return self.tree
+    def T(self):
+        return self.tree
 
     @property
-    def graph(self): return self.hypergraph
+    def graph(self):
+        return self.hypergraph
 
-    def __init__(self, tree=None, bags=None, graph=None):
+    @classmethod
+    def _from_ordering(cls, hypergraph, plot_if_td_invalid=True, ordering=None, weights=None):
+        if ordering is None:
+            ordering = sorted(hypergraph.nodes())
+
+        tree = nx.DiGraph()
+        # use lex smallest, python first compares first pos of tuple
+        smallest = lambda x: min([(ordering.index(xi), xi) for xi in x])
+
+        # initialize with empty bags
+        chi = {v: set() for v in hypergraph.nodes()}
+        tree.add_nodes_from(range(1, hypergraph.number_of_nodes() + 1))
+
+        for e in hypergraph.edges():
+            chi[smallest(e)[1]].update(e)
+
+        for v in ordering:
+            # copy
+            A = set(chi[v])  # - v
+
+            if len(A) > 1:
+                logging.debug("A(before-rem) = %s" % A)
+                A.remove(v)
+                logging.debug("A(after-rem) = %s" % A)
+                nxt = smallest(A)[1]
+                logging.debug("nxt =%s, v=%s, A=%s, chi[nxt]=%s" % (nxt, v, A, chi[nxt]))
+                chi[nxt].update(A)
+                logging.debug("chi[nxt]=%s" % chi[nxt])
+                tree.add_edge(nxt, v)
+        ret = cls(hypergraph=hypergraph, plot_if_td_invalid=plot_if_td_invalid, tree=tree, bags=chi,
+                  hyperedge_function=weights)
+        return ret
+
+    def __init__(self, hypergraph=None, plot_if_td_invalid=True, tree=None, bags=None, hyperedge_function=None):
         if tree is None:
             tree = nx.DiGraph()
         if bags is None:
             bags = {}
+        if hyperedge_function:
+            self.hyperedge_function = hyperedge_function
+
         self.tree = tree
         self.bags = bags
-        self.hypergraph = graph
+        self.hypergraph = hypergraph
+        self.plot_if_td_invalid = plot_if_td_invalid
 
     @staticmethod
     def graph_type():
@@ -108,7 +150,7 @@ class Decomposition(object):
                         try:
                             decomp.bags[bag_name] = set(map(int, line[2:]))
                         except ValueError as e:
-                            log_critical("Type checking failed (expected %s)." % int) #cls._data_type)
+                            log_critical("Type checking failed (expected %s)." % int)  # cls._data_type)
                             logging.critical("Full exception %s." % e)
                             exit(2)
                         decomp.tree.add_node(bag_name)
@@ -121,10 +163,10 @@ class Decomposition(object):
                                 exit(2)
                             u, v = map(int, line)
                             if u > header['num_bags']:
-                                log_critical("Edge label %s out of bounds (expected max %s bags)." %(u,num_bags))
+                                log_critical("Edge label %s out of bounds (expected max %s bags)." % (u, num_bags))
                                 exit(2)
                             if v > header['num_bags']:
-                                log_critical("Edge label %s out of bounds (expected max %s bags)." %(v,num_bags))
+                                log_critical("Edge label %s out of bounds (expected max %s bags)." % (v, num_bags))
                                 exit(2)
                             if u not in decomp.bags.keys():
                                 log_critical(
@@ -162,7 +204,8 @@ class Decomposition(object):
                 exit(2)
             if decomp.num_vertices > header['num_vertices']:
                 logging.critical(
-                    'Number of vertices differ (>). Was %s expected %s.\n' % (decomp.num_vertices, header['num_vertices']))
+                    'Number of vertices differ (>). Was %s expected %s.\n' % (
+                        decomp.num_vertices, header['num_vertices']))
                 exit(2)
             if decomp.num_vertices < header['num_vertices'] and strict:
                 logging.warning(
@@ -191,14 +234,14 @@ class Decomposition(object):
         for n, bag in self.bags.iteritems():
             for v in bag:
                 vertex2bags[v].add(n)
-        logging.info('Bag occurences yields: %s' % vertex2bags)
+        logging.debug('Bag occurences yields: %s' % vertex2bags)
         return vertex2bags
 
     def is_connected(self):
         vertex2bags = self.bag_occuences()
-        #print self.hypergraph.number_of_edges()
+        # print self.hypergraph.number_of_edges()
         for v in self.hypergraph.nodes_iter():
-            print v
+            logging.debug("vertex %s" % v)
             SG = self.tree.subgraph(vertex2bags[v])
             if not nx.is_connected(SG.to_undirected()):
                 logging.error('Subgraph induced by vertex "%s" is not connected' % v)
@@ -229,3 +272,76 @@ class Decomposition(object):
     @staticmethod
     def _read_header(line):
         raise NotImplementedError("abstract method -- subclass must override")
+
+    def show(self, layout, nolabel=0):
+        """ show hypergraph
+        layout 1:graphviz,
+        2:circular,
+        3:spring,
+        4:spectral,
+        5: random,
+        6: shell
+        """
+        if not self.plot_if_td_invalid:
+            logging.error('written_decomp(tree)=%s', self.tree.edges())
+            logging.error('written_decomp(bags)=%s', self.bags)
+
+            return
+        else:
+            import matplotlib.pyplot as plt
+            import matplotlib
+
+            m = self.tree.copy()
+
+            hg = HypergraphPrimalView(hypergraph=self.hypergraph)
+            pos = self.layouting(layout=2, m=m)
+            # nx.draw_networkx_nodes(hg, pos)
+            nx.draw(hg, pos)
+            plt.show()
+
+            # plt.figure(num=None, figsize=(20, 20), dpi=80)
+
+            # matplotlib.use('TkAgg')
+            import warnings
+            warnings.filterwarnings("ignore", category=matplotlib.cbook.mplDeprecation)
+
+            pos = self.layouting(layout, m)
+
+            if not nolabel:
+                nx.draw_networkx_edge_labels(m, pos)
+            nx.draw_networkx_nodes(m, pos)
+            if self.bags:
+                # bags = {k: '%s:%s' % (k, str(sorted(list(v)))) for k, v in self.bags.iteritems()}
+                bags = {}
+                logging.info("hyperedge_function %s" % self.hyperedge_function)
+
+                for k, v in self.bags.iteritems():
+                    if self.hyperedge_function:
+                        w = ','.join(
+                            str(l) + '\n' * (n % 4 == 3) for n, l in enumerate(self.hyperedge_function[k].values()))
+                        bags[k] = '%s:%s\n%s' % (k, str(sorted(list(v))), w)
+                    else:
+                        bags[k] = '%s:%s' % (k, str(sorted(list(v))))
+                nx.draw_networkx_labels(m, pos, bags)
+            else:
+                nx.draw_networkx_labels(m, pos)
+            nx.draw(m, pos)
+            plt.show()
+
+
+    @staticmethod
+    def layouting(layout, m):
+        pos = graphviz_layout(m)
+        if layout == 1:
+            pos = graphviz_layout(m)
+        elif layout == 2:
+            pos = nx.circular_layout(m)
+        elif layout == 3:
+            pos = nx.spring_layout(m)
+        elif layout == 4:
+            pos = nx.spectral_layout(m)
+        elif layout == 5:
+            pos = nx.random_layout(m)
+        elif layout == 6:
+            pos = nx.shell_layout(m)
+        return pos

@@ -1321,4 +1321,3 @@ class HypergraphPrimalView(object): #(nx.graph): #https://networkx.github.io/doc
                         raise
             bunch = bunch_iter(nbunch, self.nodes())
         return bunch
-

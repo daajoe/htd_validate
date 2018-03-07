@@ -1,11 +1,9 @@
 import logging
-from collections import defaultdict
-
 from cStringIO import StringIO
 
-from htd_validate.decompositions import Decomposition
+import networkx as nx
 from htd_validate.decompositions import GeneralizedHypertreeDecomposition
-from htd_validate.utils import Hypergraph
+from htd_validate.utils import Hypergraph, HypergraphPrimalView
 
 
 class FractionalHypertreeDecomposition(GeneralizedHypertreeDecomposition):
@@ -16,8 +14,38 @@ class FractionalHypertreeDecomposition(GeneralizedHypertreeDecomposition):
     def decomposition_type():
         pass
 
-    #@staticmethod
-    #def _reader(decomp, line):
+    @classmethod
+    def from_ordering(cls, hypergraph, ordering=None, weights=None):
+        logging.info("Constructing Decomposition from ordering")
+
+        if ordering is None:
+            ordering = sorted(hypergraph.nodes())
+        if len(ordering) == 1:
+            tree = nx.DiGraph()
+            tree.add_node(1)
+            chi = {1: ordering[0]}
+            return FractionalHypertreeDecomposition(hypergraph=hypergraph, plot_if_td_invalid=True, tree=tree, bags=chi,
+                                                    hyperedge_function=weights)
+
+        logging.debug("Ordering: %s" % ordering)
+
+        pgraph_view = HypergraphPrimalView(hypergraph=hypergraph)
+        fhtd = cls._from_ordering(hypergraph=pgraph_view, plot_if_td_invalid=True, ordering=ordering, weights=weights)
+
+        logging.debug("==== Computed Fhtd: ====")
+        logging.debug("Fhtd: edges=%s ; bags=%s; weights=%s" % (fhtd.T.edges(), fhtd.chi, fhtd.hyperedge_function))
+        logging.info("WIDTH = %s" % fhtd.width())
+
+        # TODO: simplify decomposition
+
+        valid = fhtd.validate(hypergraph)
+        logging.warning("VALID Decomp = %s" % valid)
+        if not valid:
+            raise RuntimeError("INVALID DECOMPOSITION")
+        return fhtd
+
+    # @staticmethod
+    # def _reader(decomp, line):
     #    if line[0] == 'w':
     #        decomp.hyperedge_function[int(line[1])][int(line[2])] = float(line[3])
     #        return True
@@ -27,10 +55,12 @@ class FractionalHypertreeDecomposition(GeneralizedHypertreeDecomposition):
     def graph_type():
         return Hypergraph.__name__
 
-    def __init__(self, plot_if_td_invalid=False):
-        super(FractionalHypertreeDecomposition, self).__init__()
-        self.hypergraph = Hypergraph()
-        self.hyperedge_function = defaultdict(dict)
+    def __init__(self, hypergraph=None, plot_if_td_invalid=False, tree=None, bags=None, hyperedge_function=None):
+        super(FractionalHypertreeDecomposition, self).__init__(hypergraph=hypergraph,
+                                                               plot_if_td_invalid=plot_if_td_invalid, tree=tree,
+                                                               bags=bags, hyperedge_function=hyperedge_function)
+        self.plot_if_td_invalid = plot_if_td_invalid
+        logging.debug('edges = %s' % self.tree.edges())
 
     def __len__(self):
         return len(self.bags)
@@ -38,13 +68,13 @@ class FractionalHypertreeDecomposition(GeneralizedHypertreeDecomposition):
     # TODO: reading allow floats as well insteat of just integers
     # TODO: technically the same as ghtd, but we skip the integer check
     def validate(self, graph):
-        print self.edge_function_holds()
         self.hypergraph = graph
         if self.edges_covered() and self.is_connected() and self.edge_function_holds() and \
                 self.edge_function_holds():
             return True
         else:
             logging.error('ERROR in Tree Decomposition.')
+            self.show(layout=1)
             return False
 
     def __str__(self):

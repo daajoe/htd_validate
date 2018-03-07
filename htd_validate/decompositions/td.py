@@ -1,11 +1,9 @@
 import logging
-
-import networkx as nx
 from cStringIO import StringIO
 from itertools import count, imap, izip
-from networkx.drawing.nx_agraph import graphviz_layout
 from operator import itemgetter
 
+import networkx as nx
 from htd_validate.decompositions import Decomposition
 from htd_validate.utils import Graph
 
@@ -13,47 +11,19 @@ from htd_validate.utils import Graph
 class TreeDecomposition(Decomposition):
     _problem_string = 'td'
 
-    #bucket elimination algorithm
-    @staticmethod
-    def from_ordering(g, ordering=None):
-        if ordering is None:
-            ordering = sorted(g.nodes())
-
-        #print ordering
-
-        tree = nx.DiGraph()
-        #use lex smallest, python first compares first pos of tuple
-        smallest = lambda x: min([(ordering.index(xi), xi) for xi in x])
-
-        #initialize with empty bags
-        chi = {v: set() for v in g.nodes()}
-        tree.add_nodes_from(range(1, g.number_of_nodes() + 1))
-
-        for e in g.edges():
-            chi[smallest(e)[1]].update(e)
-
-        for v in ordering:
-            #copy
-            A = set(chi[v]) #- v
-
-            if len(A) > 1:
-                #print A
-                A.remove(v)
-                #print A
-                nxt = smallest(A)[1]
-                #print nxt,v,A,chi[nxt]
-                chi[nxt].update(A)
-                #print chi[nxt]
-                tree.add_edge(nxt, v)
-
-        return TreeDecomposition(True, tree, chi, g)
+    # bucket elimination algorithm
+    @classmethod
+    def from_ordering(cls, graph, ordering=None):
+        return cls._from_ordering(hypergraph=graph, ordering=ordering)
 
     @classmethod
     def graph_type(cls):
         return Graph.__name__
 
-    def __init__(self, plot_if_td_invalid=False, tree=None, bags=None, graph=None):
-        super.__call__(TreeDecomposition, self).__init__(tree, bags, graph)
+    def __init__(self, hypergraph=None, plot_if_td_invalid=False, tree=None, bags=None, hyperedge_function=None):
+        if hyperedge_function is not None:
+            raise TypeError("Tree Decompositions do not allow for a hyperedge function.")
+        super(TreeDecomposition, self).__init__(hypergraph=hypergraph, tree=tree, bags=bags)
         self.plot_if_td_invalid = plot_if_td_invalid
 
     @staticmethod
@@ -128,47 +98,3 @@ class TreeDecomposition(Decomposition):
         root_id = lengths.index(max_bag_size)
         return bagids2lengths.keys()[root_id]
 
-    def show(self, layout, nolabel=0):
-        """ show hypergraph
-        layout 1:graphviz,
-        2:circular,
-        3:spring,
-        4:spectral,
-        5: random,
-        6: shell
-        """
-        if not self.plot_if_td_invalid:
-            logging.error('written_decomp(tree)=%s', self.tree.edges())
-            logging.error('written_decomp(bags)=%s', self.bags)
-
-            return
-        else:
-            import matplotlib.pyplot as plt
-            import matplotlib
-
-            matplotlib.use('TkAgg')
-
-            m = self.tree.copy()
-            pos = graphviz_layout(m)
-            if layout == 1:
-                pos = graphviz_layout(m)
-            elif layout == 2:
-                pos = nx.circular_layout(m)
-            elif layout == 3:
-                pos = nx.spring_layout(m)
-            elif layout == 4:
-                pos = nx.spectral_layout(m)
-            elif layout == 5:
-                pos = nx.random_layout(m)
-            elif layout == 6:
-                pos = nx.shell_layout(m)
-            if not nolabel:
-                nx.draw_networkx_edge_labels(m, pos)
-            nx.draw_networkx_nodes(m, pos)
-            if self.bags:
-                bags = {k: '%s:%s' % (k, str(sorted(list(v)))) for k, v in self.bags.iteritems()}
-                nx.draw_networkx_labels(m, pos, bags)
-            else:
-                nx.draw_networkx_labels(m, pos)
-            nx.draw(m, pos)
-            plt.show()

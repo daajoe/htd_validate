@@ -1,11 +1,11 @@
 import logging
-from collections import defaultdict
-
-import networkx as nx
+import sys
 from cStringIO import StringIO
+from collections import defaultdict
 from itertools import count, imap, izip
 from operator import itemgetter
 
+import networkx as nx
 from htd_validate.decompositions import Decomposition
 from htd_validate.utils import Hypergraph
 
@@ -17,10 +17,17 @@ class GeneralizedHypertreeDecomposition(Decomposition):
     def graph_type():
         return Hypergraph.__name__
 
-    def __init__(self, plot_if_td_invalid=False):
-        super(GeneralizedHypertreeDecomposition, self).__init__()
-        self.hypergraph = Hypergraph()
-        self.hyperedge_function = defaultdict(dict)
+    def __init__(self, hypergraph=None, plot_if_td_invalid=False, tree=None, bags=None, hyperedge_function=None):
+        if not hyperedge_function:
+            self.hyperedge_function = defaultdict(dict)
+        else:
+            self.hyperedge_function = hyperedge_function
+        if not hypergraph:
+            hypergraph = Hypergraph()
+
+        super(GeneralizedHypertreeDecomposition, self).__init__(hypergraph=hypergraph,
+                                                                plot_if_td_invalid=plot_if_td_invalid, tree=tree,
+                                                                bags=bags)
 
     def __len__(self):
         return len(self.bags)
@@ -52,17 +59,18 @@ class GeneralizedHypertreeDecomposition(Decomposition):
         if len(decomp.hyperedge_function) != header['num_bags']:
             logging.error(
                 'Too many mappings. Found %s expected %s \n' % (
-                len(decomp.hyperedge_function), header['num_bags']))
+                    len(decomp.hyperedge_function), header['num_bags']))
             exit(2)
         for b in decomp.bags.iterkeys():
-            for e in xrange(1, header['num_hyperedges']+1):
+            for e in xrange(1, header['num_hyperedges'] + 1):
                 if not decomp.hyperedge_function[b].has_key(e):
                     logging.error(
                         'Missing function mapping for node %s of the tree. Missing for edge %s \n' % (b, e))
                     exit(2)
         if header['max_function_value'] != decomp.width():
             logging.error(
-                'Given width is wrong. Computed width %s, given width %s \n' % (decomp.width(), header['max_function_value']))
+                'Given width is wrong. Computed width %s, given width %s \n' % (
+                    decomp.width(), header['max_function_value']))
             exit(2)
 
     # TODO: detect format from file header
@@ -113,7 +121,7 @@ class GeneralizedHypertreeDecomposition(Decomposition):
             logging.error('ERROR in Tree Decomposition.')
             return False
 
-    def write(self, ostream):
+    def write(self, ostream=sys.stdout):
         tree_mapping = {org_id: id for id, org_id in izip(count(start=1), self.tree.nodes_iter())}
         tree = nx.relabel_nodes(self.tree, tree_mapping, copy=True)
         num_vertices = reduce(lambda x, y: max(x, max(y or [0])), self.bags.itervalues(), 0)
@@ -140,7 +148,7 @@ class GeneralizedHypertreeDecomposition(Decomposition):
         return string.getvalue()
 
     def width(self):
-        weight = [0]    #special case for the empty graph
+        weight = [0]  # special case for the empty graph
         for t in self.tree.nodes_iter():
             weight.append(sum(self.hyperedge_function[t].itervalues()))
         logging.info("Width is '%s'." % max(weight))

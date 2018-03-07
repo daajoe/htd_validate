@@ -3,6 +3,7 @@
 #
 # Copyright 2017
 # Johannes K. Fichte, TU Wien, Austria*
+# Markus A. Hecher, TU Wien, Austria*
 #
 # *) also affiliated with University of Potsdam(R) :P
 # *) is not allowed to contain parts of nuts ;P
