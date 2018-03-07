@@ -370,24 +370,29 @@ class HypergraphPrimalView(object): #(nx.graph): #https://networkx.github.io/doc
     #handle with care!
     #returns tuple (list of "almost" (depending on \emph{simplicial_diff}) simplicial vertices, clique) per clique
     #fixme: modify/replace nx.enumerate_all_cliques!
-    def simplicial_iter(self, simplicial_diff=0, clique_sizes_at_least=3, clique_sizes_up_to=5, max_clique=True):
-        maxcl = 0
-        #for clique in nx.enumerate_all_cliques(self) if not max_clique else self.__hg.largest_clique_asp()[2]:
-        for clique in self.__hg.largest_clique_asp(prevent_k_hyperedge=5)[2] if not max_clique else self.__hg.largest_clique_asp()[2]:
-            if not max_clique and len(clique) > clique_sizes_up_to:
-                return
-            maxcl = max(maxcl, len(clique))
-            if clique_sizes_at_least <= len(clique): # <= clique_sizes_up_to:
+    def simplicial_iter(self, simplicial_diff=0, clique_prevent_he_at_least=3, clique_prevent_he_up_to=3):
+        cl = None
+        for k in xrange(clique_prevent_he_up_to, clique_prevent_he_at_least - 1, -1):
+            maxcl = 0
+            aset = self.__hg.largest_clique_asp(clingoctl=cl, prevent_k_hyperedge=k, ground=False)
+            cl = aset[3]
+            #print c
+            #for clique in nx.enumerate_all_cliques(self) if not max_clique else self.__hg.largest_clique_asp()[2]:
+            for clique in aset[2]:
+                #if not max_clique and len(clique) > clique_sizes_up_to:
+                #    return
+                maxcl = max(maxcl, len(clique))
+                #if clique_sizes_at_least <= len(clique): # <= clique_sizes_up_to:
                 nodes_of_clique = []
                 for c in clique:
                     simpl = self.degree(c) - len(clique) + 1
                     assert(simpl >= 0)
                     if simplicial_diff == simpl or 0 < simpl <= simplicial_diff:
                         nodes_of_clique.append((c, simpl))
-                if not max_clique or len(nodes_of_clique) > 0:
-                    yield (nodes_of_clique, clique, maxcl)
-        if max_clique: #maybe we did not yield yet, get a chance now
-            yield ([], [], maxcl)
+                if k > 3 or len(nodes_of_clique) > 0:
+                    yield (nodes_of_clique, clique, (k, maxcl))
+            if k == 3: #maybe we did not yield yet, get a chance now
+                yield ([], [], (k, maxcl))
         # adj = self.__hg.adj
         # blacklist = set()
         # for k, a in adj:
@@ -1316,4 +1321,3 @@ class HypergraphPrimalView(object): #(nx.graph): #https://networkx.github.io/doc
                         raise
             bunch = bunch_iter(nbunch, self.nodes())
         return bunch
-
