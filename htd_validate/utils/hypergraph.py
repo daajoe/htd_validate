@@ -61,6 +61,14 @@ class SymTab:
         self.name2id.clear()
         self.id2name.clear()
 
+    @property
+    def n2id(self):
+        return self.name2id
+
+    @property
+    def id2n(self):
+        return self.id2name
+
     def __getitem__(self, key):
         try:
             return self.name2id[key]
@@ -263,7 +271,7 @@ class Hypergraph(object):
         for e in es:
             self.add_hyperedge([x for x in e if x in self.__vertices])
 
-    #can also contract edge parts >= 2, e[0] is the edge that is kept
+    #can also contract edge parts >= 2, e[0] is the part of the edge that is kept
     def contract_edge(self, e):
         assert(len(e) >= 2)
         dl = -1

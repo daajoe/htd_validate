@@ -970,18 +970,18 @@ class HypergraphPrimalView(object): #(nx.graph): #https://networkx.github.io/doc
 
         if weight is None:
             for n, nbrs in nodes_nbrs:
-                yield (n, len(nbrs) + (n in nbrs))  # return tuple (n,degree)
+                yield (n, len(nbrs) + (n in nbrs), nbrs)  # return tuple (n,degree)
         else:
             # edge weighted graph - degree is sum of nbr edge weights
             for n, nbrs in nodes_nbrs:
                 yield (n, sum((nbrs[nbr].get(weight, 1) for nbr in nbrs)) +
-                       (n in nbrs and nbrs[n].get(weight, 1)))
+                       (n in nbrs and nbrs[n].get(weight, 1)), nbrs)
 
     def hyper_degree_iter(self, nbunch=None):
         nodes_nbrs = ((n, self.__hg.incident_edges(n)) for n in self.nbunch_iter(nbunch))
 
         for n, nbrs in nodes_nbrs:
-            yield (n, len(nbrs))  # return tuple (n,degree)
+            yield (n, len(nbrs), nbrs)  # return tuple (n,degree)
 
     def clear(self):
         """Remove all nodes and edges from the graph.
