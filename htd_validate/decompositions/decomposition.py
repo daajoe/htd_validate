@@ -6,6 +6,7 @@ from collections import defaultdict
 from itertools import chain
 
 import networkx as nx
+from htd_validate.utils import HypergraphPrimalView
 from networkx.drawing.nx_agraph import graphviz_layout
 
 
@@ -59,7 +60,6 @@ class Decomposition(object):
                 chi[nxt].update(A)
                 logging.debug("chi[nxt]=%s" % chi[nxt])
                 tree.add_edge(nxt, v)
-
         ret = cls(hypergraph=hypergraph, plot_if_td_invalid=plot_if_td_invalid, tree=tree, bags=chi,
                   hyperedge_function=weights)
         return ret
@@ -70,7 +70,7 @@ class Decomposition(object):
         if bags is None:
             bags = {}
         if hyperedge_function:
-            self.hyperedge_function=hyperedge_function
+            self.hyperedge_function = hyperedge_function
 
         self.tree = tree
         self.bags = bags
@@ -241,7 +241,7 @@ class Decomposition(object):
         vertex2bags = self.bag_occuences()
         # print self.hypergraph.number_of_edges()
         for v in self.hypergraph.nodes_iter():
-            logging.debug("vertex %s" %v)
+            logging.debug("vertex %s" % v)
             SG = self.tree.subgraph(vertex2bags[v])
             if not nx.is_connected(SG.to_undirected()):
                 logging.error('Subgraph induced by vertex "%s" is not connected' % v)
@@ -291,24 +291,22 @@ class Decomposition(object):
             import matplotlib.pyplot as plt
             import matplotlib
 
+            m = self.tree.copy()
+
+            hg = HypergraphPrimalView(hypergraph=self.hypergraph)
+            pos = self.layouting(layout=2, m=m)
+            # nx.draw_networkx_nodes(hg, pos)
+            nx.draw(hg, pos)
+            plt.show()
+
+            # plt.figure(num=None, figsize=(20, 20), dpi=80)
+
             # matplotlib.use('TkAgg')
             import warnings
             warnings.filterwarnings("ignore", category=matplotlib.cbook.mplDeprecation)
 
-            m = self.tree.copy()
-            pos = graphviz_layout(m)
-            if layout == 1:
-                pos = graphviz_layout(m)
-            elif layout == 2:
-                pos = nx.circular_layout(m)
-            elif layout == 3:
-                pos = nx.spring_layout(m)
-            elif layout == 4:
-                pos = nx.spectral_layout(m)
-            elif layout == 5:
-                pos = nx.random_layout(m)
-            elif layout == 6:
-                pos = nx.shell_layout(m)
+            pos = self.layouting(layout, m)
+
             if not nolabel:
                 nx.draw_networkx_edge_labels(m, pos)
             nx.draw_networkx_nodes(m, pos)
@@ -329,3 +327,21 @@ class Decomposition(object):
                 nx.draw_networkx_labels(m, pos)
             nx.draw(m, pos)
             plt.show()
+
+
+    @staticmethod
+    def layouting(layout, m):
+        pos = graphviz_layout(m)
+        if layout == 1:
+            pos = graphviz_layout(m)
+        elif layout == 2:
+            pos = nx.circular_layout(m)
+        elif layout == 3:
+            pos = nx.spring_layout(m)
+        elif layout == 4:
+            pos = nx.spectral_layout(m)
+        elif layout == 5:
+            pos = nx.random_layout(m)
+        elif layout == 6:
+            pos = nx.shell_layout(m)
+        return pos

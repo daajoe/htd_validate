@@ -41,7 +41,7 @@ class FractionalHypertreeDecomposition(GeneralizedHypertreeDecomposition):
         valid = fhtd.validate(hypergraph)
         logging.warning("VALID Decomp = %s" % valid)
         if not valid:
-            exit(42)
+            raise RuntimeError("INVALID DECOMPOSITION")
         return fhtd
 
     # @staticmethod
