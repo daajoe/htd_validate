@@ -272,28 +272,29 @@ class Hypergraph(object):
             self.add_hyperedge([x for x in e if x in self.__vertices])
 
     #can also contract edge parts >= 2, e[0] is the part of the edge that is kept
-    def contract_edge(self, e):
+    def contract_edge(self, e, erepr):
         assert(len(e) >= 2)
+        assert(erepr in e)
         dl = -1
-        excl = 0
+        excl = None
         for (k, v) in self.__edges.iteritems():
             contr = [x for x in v if x not in e]
-            #assert(len(contr) >= 1)
             if len(contr) == 0: # and contr[0] == e[0]:
                 dl = k
-            elif (len(contr) + 1 < len(v)) or (len(contr) + 1 == len(v) and e[0] not in v):
-                excl = 1
-                contr.append(e[0])
-                ex = Hypergraph.__edge_type(contr)
-                if self.isSubsumed(set(ex), modulo=k):
+            elif (len(contr) + 1 < len(v)) or (len(contr) + 1 == len(v) and erepr not in v):
+                excl = erepr
+                contr.append(erepr)
+                if self.isSubsumed(set(contr), modulo=k):
                     dl = k
                 else:
-                    self.__edges[k] = ex
-            elif e[0] in v:
-                excl = 1
+                    self.__edges[k] = Hypergraph.__edge_type(contr)
+            elif erepr in v:
+                excl = erepr
         if dl >= 0:
             del self.__edges[dl]
-        self.__vertices.difference_update(e[excl:])
+        self.__vertices.difference_update(e)
+        if excl is not None:
+            self.__vertices.update((excl,))
 
 
     def incident_edges(self, v):

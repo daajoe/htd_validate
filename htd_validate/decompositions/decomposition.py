@@ -65,7 +65,7 @@ class Decomposition(object):
         return ret
 
     def replay(self, replay):
-        for (parent, bag) in replay:
+        for (parent, bag, w) in replay.reverse():
             for t in self.tree.nodes():
                 if self.bags[t].issuperset(parent):
                     t2 = self.tree.number_of_nodes() + 1
