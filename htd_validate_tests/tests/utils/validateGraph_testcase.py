@@ -38,3 +38,17 @@ class ValidateGraphTestCase(unittest.TestCase):
             for file in sorted(files):
                 print("testing: ", file, file)
                 self.assertFromFiles(os.path.join(folder, file), assertion, strict)
+
+    def mapBenchmarks(self, rel_path, function, args={}):
+        #path, dirs, files
+        for path, dirs, _ in os.walk(self.filePath(rel_path)):
+            #print dirs
+            for d in dirs:
+                for _, _, files in os.walk(os.path.join(path, d)):
+                    for f in files:
+                        print d + "/" + f
+                        args["path"] = self.filePath("../../../../../hypergraphs/hyperbench/" + d + "/") + f
+                        function(args)
+                        #self.maxCliqueFromFile(mx, self.filePath("../../../../../hypergraphs/hyperbench/" + d + "/") + f,
+                        #                        fischl_format=True, ground=False)
+
