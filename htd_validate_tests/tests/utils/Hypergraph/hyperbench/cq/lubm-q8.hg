@@ -1,0 +1,5 @@
+Department(X12),
+emailAddress(X10,X3),
+memberOf(X10,X12),
+subOrganizationOf(X12,X5),
+Student(X10).

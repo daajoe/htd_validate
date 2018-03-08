@@ -1,0 +1,7 @@
+% Extracted by MS from file "adder_15.xml": 76 atoms, 106 variables
+
+cn (X19, X21, X32, X20, X23, X24, X1),
+mk (X34, X33, X2),
+k (X33, X25, X2),
+mc (X32, X34, X13, X16, X1),
+t (X8, X9, X10, X34, X12, X11, X1, X2, X3, X4, X5, X).

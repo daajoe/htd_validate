@@ -1,0 +1,5 @@
+telephone(X9,X13),
+emailAddress(X13,X3),
+name(X13,X7),
+Professor(X13),
+worksFor(X13,X5).

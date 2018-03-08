@@ -1,0 +1,2 @@
+ResearchGroup(X4),
+subOrganizationOf(X3,X4).

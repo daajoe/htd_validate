@@ -1,0 +1,4 @@
+worksFor(X8,X9),
+Chair(X8),
+subOrganizationOf(X9,X6),
+Department(X9).

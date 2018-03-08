@@ -1,0 +1,4 @@
+Student(X9),
+takesCourse(X8,X9),
+teacherOf(X8,X1),
+Course(X8).

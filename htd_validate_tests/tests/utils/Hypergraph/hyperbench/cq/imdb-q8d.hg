@@ -1,0 +1,7 @@
+name(X30,X54,X31,X23,X25,X24,X27,X26,X2),
+title(X41,X52,X40,X43,X32,X42,X34,X33,X36,X35,X37,X3),
+aka_name(X8,X9,X54,X10,X12,X11,X6,X),
+role_type(X56,X1),
+cast_info(X52,X54,X56,X44,X47,X46,X4),
+company_name(X19,X21,X55,X22,X16,X18,X1),
+movie_companies(X52,X55,X1,X3,X).

@@ -1,0 +1,2 @@
+GraduateStudent(X4),
+takesCourse(X3,X4).

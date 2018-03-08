@@ -1,0 +1,3 @@
+doctor(doctor_npi,doctor_doctor,doctor_spec,doctor_hospital,doctor_conf),
+targethospital(targethospital_doctor,doctor_spec,PNTR98657,targethospital_npi,targethospital_conf),
+prescription(prescription_id,prescription_patient,targethospital_npi,prescription_conf).

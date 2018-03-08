@@ -1,0 +1,2 @@
+takesCourse(X3,X4),
+Student(X4).
