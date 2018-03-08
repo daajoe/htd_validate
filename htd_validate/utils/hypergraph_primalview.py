@@ -52,6 +52,8 @@ class HypergraphPrimalView(object): #(nx.graph): #https://networkx.github.io/doc
         raise NotImplementedError()
 
     def induced_graph(self, v):
+        if self.hg.nodes() == set(v):
+            return self
         h = Hypergraph(vertices=v)
         h.induce_edges(self.__hg.edges().values())
         return HypergraphPrimalView(h)
