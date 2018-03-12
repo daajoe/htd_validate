@@ -2,6 +2,7 @@
 from __future__ import absolute_import
 import htd_validate
 
+import logging
 import htd_validate_tests.tests.utils.validateGraph_testcase as vtd
 import os
 import htd_validate.utils.hypergraph
@@ -11,7 +12,7 @@ class TestHypergraph(vtd.ValidateGraphTestCase):
     _type = "Hypergraph"
 
     def setUp(self):
-        pass
+        logging.basicConfig(level=logging.DEBUG)
 
     def tearDown(self):
         pass
@@ -29,15 +30,28 @@ class TestHypergraph(vtd.ValidateGraphTestCase):
         self.assertEqual([1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], sorted(hg.adj[2].keys()))
 
     def testFractionalCover(self):
+        sol = {}
         hg = self.loadFile(self.filePath("testHG/") + "C13_7.edge")
-        self.assertEqual(1.0, hg.fractional_cover([2, 13]))
+        self.assertEqual(1.0, hg.fractional_cover([2, 13], solution=sol))
+
+        logging.debug(sol)
+        self.assertEqual(1, len(sol))
 
         hg = self.loadFile(self.filePath("testHG/") + "C3.edge")
-        self.assertEqual(1.5, hg.fractional_cover([1, 2, 3]))
-        self.assertEqual(1.0, hg.fractional_cover([1, 2]))
+        sol = {}
+        self.assertEqual(1.5, hg.fractional_cover([1, 2, 3], solution=sol))
+        logging.debug(sol)
+        self.assertEqual(3, len(sol))
+        sol = {}
+        self.assertEqual(1.0, hg.fractional_cover([1, 2], solution=sol))
+        logging.debug(sol)
+        self.assertEqual(1, len(sol))
 
         hg = self.loadFile(self.filePath("testHG/") + "C4.edge")
-        self.assertEqual(2.0, hg.fractional_cover([1, 2, 3, 4]))
+        sol = {}
+        self.assertEqual(2.0, hg.fractional_cover([1, 2, 3, 4], solution=sol))
+        logging.debug(sol)
+        self.assertEqual(2, len(sol))
 
     def maxCliqueFromFile(self, maxC, fil, fischl_format=False, ground=False):
         hg = self.loadFile(fil, fischl_format=fischl_format)

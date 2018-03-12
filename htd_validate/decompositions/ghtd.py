@@ -32,6 +32,12 @@ class GeneralizedHypertreeDecomposition(Decomposition):
     def __len__(self):
         return len(self.bags)
 
+    def _replay(self, node, bag, weight):
+        sol = {}
+        self.graph.fractional_cover(bag, solution=sol, opt=weight)
+        for i, v in sol.iteritems():
+            self.hyperedge_function[node][i] = v
+
     @classmethod
     def _read_header(cls, line):
         if len(line) < 6:

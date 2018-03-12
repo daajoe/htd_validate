@@ -65,7 +65,8 @@ class Decomposition(object):
         return ret
 
     def replay(self, replay):
-        for (parent, bag, w) in replay.reverse():
+        assert(self.graph is not None)
+        for (parent, bag, weight) in replay.reverse():
             for t in self.tree.nodes():
                 if self.bags[t].issuperset(parent):
                     t2 = self.tree.number_of_nodes() + 1
@@ -73,6 +74,10 @@ class Decomposition(object):
                     self.tree.add_edge(t, t2)
                     self.bags[t2] = set(bag)
                     self.bags[t2].update(parent)
+                    self._replay(t2, bag, weight)   #TODO: use additional stored weight info, instead of recomputation
+
+    def _replay(self, node, bag, weight):
+        pass
 
     def __init__(self, hypergraph=None, plot_if_td_invalid=True, tree=None, bags=None, hyperedge_function=None):
         if tree is None:

@@ -226,12 +226,15 @@ class Hypergraph(object):
         return aset
 
 
-    def fractional_cover(self, verts):
+    def fractional_cover(self, verts, solution=None, opt=-1):
         if cx is None:
             raise ImportError()
 
         problem = cx.Cplex()
         problem.objective.set_sense(problem.objective.sense.minimize)
+
+        if opt >= 0:
+            pass        #TODO: use optimal value to boost up optimization
 
         names = ["e{0}".format(e) for e in self.edges()]
         # coefficients
@@ -260,6 +263,14 @@ class Hypergraph(object):
         problem.set_log_stream(None)
         problem.solve()
         assert(problem.solution.get_status() == 1)
+
+        if solution is not None:
+            pos = 0
+            for v in problem.solution.get_values():
+                if v >= 0.000001:
+                    solution[pos] = v
+                pos += 1
+
         return problem.solution.get_objective_value()
         # print problem.solution.get_values()
 
