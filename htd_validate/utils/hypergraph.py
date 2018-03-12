@@ -227,14 +227,16 @@ class Hypergraph(object):
 
 
     def fractional_cover(self, verts, solution=None, opt=-1):
+
         if cx is None:
             raise ImportError()
+
+        if solution is None and len(verts) <= 1:
+            return 1.0
 
         problem = cx.Cplex()
         problem.objective.set_sense(problem.objective.sense.minimize)
 
-        if opt >= 0:
-            pass        #TODO: use optimal value to boost up optimization
 
         names = ["e{0}".format(e) for e in self.edges()]
         # coefficients
@@ -256,6 +258,9 @@ class Hypergraph(object):
                                        senses=["G"] * len(constraints),
                                        rhs=[1] * len(constraints))#,
                                        #names=["c{0}".format(x) for x in names])
+        if opt >= 0:
+            problem.linear_constraints.add(lin_expr=[[names, [1] * len(names)]],
+                                           senses=["E"], rhs=[opt])
 
         problem.set_results_stream(None)
         problem.set_error_stream(None)
@@ -330,12 +335,12 @@ class Hypergraph(object):
     #            nbh[e] = Hypergraph.__d
     #    return nbh
 
-    def adjByNode(self, v):
+    def adjByNode(self, v, strict=True):
         nbh = dict()
         for e in self.__edges.values():
             if v in e:
                 for ex in e:
-                    if ex != v:
+                    if not strict or ex != v:
                         nbh[ex] = Hypergraph.__d
         return nbh
 

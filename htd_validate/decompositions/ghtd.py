@@ -34,6 +34,7 @@ class GeneralizedHypertreeDecomposition(Decomposition):
 
     def _replay(self, node, bag, weight):
         sol = {}
+        logging.debug("{0}, {0}, {0}".format(node, bag, weight))
         self.graph.fractional_cover(bag, solution=sol, opt=weight)
         for i, v in sol.iteritems():
             self.hyperedge_function[node][i] = v

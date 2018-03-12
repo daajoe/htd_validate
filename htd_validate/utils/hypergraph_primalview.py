@@ -51,8 +51,8 @@ class HypergraphPrimalView(object): #(nx.graph): #https://networkx.github.io/doc
     def name(self, s):
         raise NotImplementedError()
 
-    def induced_graph(self, v):
-        if self.hg.nodes() == set(v):
+    def induced_graph(self, v, force_copy=False):
+        if not force_copy and self.hg.nodes() == set(v):
             return self
         h = Hypergraph(vertices=v)
         h.induce_edges(self.__hg.edges().values())
@@ -593,7 +593,7 @@ class HypergraphPrimalView(object): #(nx.graph): #https://networkx.github.io/doc
             return False
         #raise NotImplementedError()
 
-    def neighbors(self, n):
+    def neighbors(self, n, strict=True):
         """Return a list of the nodes connected to the node n.
 
         Parameters
@@ -630,7 +630,7 @@ class HypergraphPrimalView(object): #(nx.graph): #https://networkx.github.io/doc
 
         """
         try:
-            return self.__hg.adjByNode(n).keys()
+            return self.__hg.adjByNode(n, strict=strict).keys()
         except KeyError:
             raise nx.NetworkXError("The node %s is not in the graph." % (n,))
 

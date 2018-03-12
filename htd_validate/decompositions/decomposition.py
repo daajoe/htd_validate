@@ -31,6 +31,9 @@ class Decomposition(object):
     def graph(self):
         return self.hypergraph
 
+    def set_graph(self, hypergraph):
+        self.hypergraph = hypergraph
+
     @classmethod
     def _from_ordering(cls, hypergraph, plot_if_td_invalid=True, ordering=None, weights=None):
         if ordering is None:
@@ -64,9 +67,11 @@ class Decomposition(object):
                   hyperedge_function=weights)
         return ret
 
-    def replay(self, replay):
+    def replay(self, repl):
+        assert(repl is not None)
         assert(self.graph is not None)
-        for (parent, bag, weight) in replay.reverse():
+        for (parent, bag, weight) in repl:
+            found = False
             for t in self.tree.nodes():
                 if self.bags[t].issuperset(parent):
                     t2 = self.tree.number_of_nodes() + 1
@@ -75,6 +80,16 @@ class Decomposition(object):
                     self.bags[t2] = set(bag)
                     self.bags[t2].update(parent)
                     self._replay(t2, bag, weight)   #TODO: use additional stored weight info, instead of recomputation
+                    found = True
+            if not found:
+                assert(len(parent) == 0)
+                assert(len(self.tree.nodes()) == 0)
+                t2 = 1
+                self.tree.add_node(t2)
+                self.bags[t2] = set(bag)
+                self._replay(t2, bag, weight)   #TODO: use additional stored weight info, instead of recomputation
+                #found = True
+            #assert(found)
 
     def _replay(self, node, bag, weight):
         pass
