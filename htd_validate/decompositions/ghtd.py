@@ -38,13 +38,19 @@ class GeneralizedHypertreeDecomposition(Decomposition):
 
     def _replay(self, node, bag, weight):
         sol = {}
-        logging.debug("{0}, {0}, {0}".format(node, bag, weight))
+        print self.graph.edges(), node, bag, weight
+        logging.debug("{0}, {1}, {2}, {3}".format(self.graph.edges(), node, bag, weight))
         self.graph.fractional_cover(bag, solution=sol, opt=weight)
         #print self.hyperedge_function, node
         for i, v in sol.iteritems():
             if node not in self.hyperedge_function:
                 self.hyperedge_function[node] = {}
             self.hyperedge_function[node][i] = v
+        print self.hyperedge_function[node]
+        #TODO: improve check of ghtd.py such that we do not stupidely have to set everything else to 0
+        for k in self.graph.edges():
+            if k not in self.hyperedge_function[node]:
+                self.hyperedge_function[node][k] = 0
 
     def _relabel(self, substitution_edges):
         self.hyperedge_function = {node: relab.relabel_dict(he, substitution_keys=substitution_edges)

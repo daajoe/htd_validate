@@ -69,8 +69,8 @@ class FractionalHypertreeDecomposition(GeneralizedHypertreeDecomposition):
     # TODO: technically the same as ghtd, but we skip the integer check
     def validate(self, graph):
         self.hypergraph = graph
-        if self.edges_covered() and self.is_connected() and self.edge_function_holds() and \
-                self.edge_function_holds():
+        if self.is_tree() and self.edges_covered() and self.is_connected() and self.edge_function_holds(): # and \
+                #self.edge_function_holds():
             return True
         else:
             logging.error('ERROR in Tree Decomposition.')

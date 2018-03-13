@@ -81,9 +81,10 @@ class Decomposition(object):
                     t2 = self.tree.number_of_nodes() + 1
                     self.tree.add_node(t2)
                     self.tree.add_edge(t, t2)
-                    self.bags[t2] = set(bag)
-                    self.bags[t2].update(parent)
-                    self._replay(t2, bag, weight)   #TODO: use additional stored weight info, instead of recomputation
+                    parent = set(parent)
+                    parent.update(bag)
+                    self.bags[t2] = parent #set(bag)
+                    self._replay(t2, parent, weight)   #TODO: use additional stored weight info, instead of recomputation
                     found = True
             if not found:
                 assert(len(parent) == 0)

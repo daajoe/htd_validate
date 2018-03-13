@@ -240,7 +240,7 @@ class Hypergraph(object):
             return None, None
         return relab.revert_substitution(substitution), relab.revert_substitution(substitution_keys)
 
-    def fractional_cover(self, verts, solution=None, opt=-1):
+    def fractional_cover(self, verts, solution=None, opt=-1, accuracy=0.0000001):
         if cx is None:
             raise ImportError()
 
@@ -285,8 +285,8 @@ class Hypergraph(object):
         if solution is not None:
             pos = 0
             for v in problem.solution.get_values():
-                if v >= 0.000001:
-                    solution[pos] = v
+                if v >= accuracy:
+                    solution[int(names[pos][1:])] = v + accuracy
                 pos += 1
 
         return problem.solution.get_objective_value()
