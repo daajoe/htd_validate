@@ -21,7 +21,7 @@
 import deprecation
 import networkx as nx
 #import cplex
-from copy import deepcopy
+import copy
 
 from htd_validate.utils.formula import Formula
 from hypergraph import Hypergraph
@@ -50,6 +50,12 @@ class HypergraphPrimalView(object): #(nx.graph): #https://networkx.github.io/doc
     @name.setter
     def name(self, s):
         raise NotImplementedError()
+
+    def __copy__(self):
+        return HypergraphPrimalView(copy.copy(self.__hg))
+
+    def __deepcopy__(self, memodict={}):
+        return HypergraphPrimalView(copy.deepcopy(self.__hg, memodict))
 
     def induced_graph(self, v, force_copy=False):
         if not force_copy and self.hg.nodes() == set(v):
@@ -1027,8 +1033,8 @@ class HypergraphPrimalView(object): #(nx.graph): #https://networkx.github.io/doc
         >>> H = G.copy()
 
         """
-        raise NotImplementedError()
-        #return deepcopy(self)
+        #raise NotImplementedError()
+        return copy.deepcopy(self)
 
     def is_multigraph(self):
         """Return True if graph is a multigraph, False otherwise."""
@@ -1080,7 +1086,7 @@ class HypergraphPrimalView(object): #(nx.graph): #https://networkx.github.io/doc
         >>> H.edges()
         [(0, 1)]
         """
-        return deepcopy(self)
+        return self.copy() #copy.deepcopy(self)
         #raise NotImplementedError()
 
     def to_undirected(self):

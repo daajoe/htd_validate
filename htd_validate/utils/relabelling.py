@@ -18,6 +18,7 @@
 # License along with hypergraph.py.  If not, see
 # <http://www.gnu.org/licenses/>.
 from __future__ import print_function
+import collections
 
 
 def relabel_sequence(seq, substitution):
@@ -32,10 +33,12 @@ def revert_substitution(substitution):
     return {v: k for k, v in substitution.iteritems()}
 
 
-#TODO: probably replace (...) by tuple([...]) in inner tuple comprehension
-def relabel_dict(thedict, substitution=None, substitution_keys=None):
-    assert(substitution is not None or substitution_keys is not None)
+# TODO: probably replace (...) by tuple([...]) in inner tuple comprehension
+def relabel_dict(thedict, substitution=None, substitution_keys=None, typ=tuple):
+    assert (substitution is not None or substitution_keys is not None)
 
-    def lab(substi, v): return substi[v] if substi is not None else v   #PEP says no lambda here :/
-    return {lab(substitution_keys, k): (lab(substitution, v) for v in e) for (k, e) in thedict.iteritems()}
+    def lab(substi, v): return substi[v] if substi is not None else v  # PEP says no lambda here :/
 
+    def lab_val(substi, e): return typ(lab(substi, v) for v in e) if isinstance(e, collections.Iterable) else e
+
+    return {lab(substitution_keys, k): lab_val(substitution, e) for (k, e) in thedict.iteritems()}

@@ -13,6 +13,10 @@ import htd_validate.utils.relabelling as relab
 class GeneralizedHypertreeDecomposition(Decomposition):
     _problem_string = 'ghtd'
 
+    @property
+    def weights(self):
+        return self.hyperedge_function
+
     @staticmethod
     def graph_type():
         return Hypergraph.__name__
@@ -43,7 +47,7 @@ class GeneralizedHypertreeDecomposition(Decomposition):
             self.hyperedge_function[node][i] = v
 
     def _relabel(self, substitution_edges):
-        self.hyperedge_function = {node: relab.relabel_dict(he, substitution_edges=substitution_edges)
+        self.hyperedge_function = {node: relab.relabel_dict(he, substitution_keys=substitution_edges)
                                    for node, he in self.hyperedge_function.iteritems()}
 
     @classmethod

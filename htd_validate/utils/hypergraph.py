@@ -34,6 +34,7 @@ try:
 except ImportError:
     xz = False
 
+import copy
 import mimetypes
 
 try:
@@ -98,8 +99,8 @@ class Hypergraph(object):
             self.__nsymtab = SymTab()
             self.__elabel = {}
 
-    def edge_rank(self, n):
-        return map(lambda x: tuple(x, len(x)), self.adjByNode(n))
+    #def edge_rank(self, n):
+    #    return map(lambda x: tuple(x, len(x)), self.adjByNode(n))
 
     #--solve-limit=<n>[,<m>] : Stop search after <n> conflicts or <m> restarts
     def largest_clique_asp(self, clingoctl=None, timeout=10, enum=True, usc=True, ground=False, prevent_k_hyperedge=3, solve_limit="umax,umax"):
@@ -390,6 +391,31 @@ class Hypergraph(object):
 
     def edges_iter(self):
         return iter(self.__edges.values())
+
+    #bool operator so to say
+    def __nonzero__(self):
+        return True
+        #return len(self.__edges) > 0
+
+    def __copy__(self):
+        hg = Hypergraph(non_numerical=self.__non_numerical, vertices=self.__vertices)
+        hg.__edges = self.__edges
+        if self.__non_numerical:
+            hg.__nsymtab = self.__nsymtab
+            hg.__elabel = self.__elabel
+
+    def __deepcopy__(self, memodict={}):
+        #assert(False)
+        hg = Hypergraph(non_numerical=self.__non_numerical, vertices=copy.deepcopy(self.__vertices, memodict))
+        hg.__edges = copy.deepcopy(self.__edges, memodict)
+        if self.__non_numerical:
+            #do not deep copy this stuff, not needed for now
+            hg.__nsymtab = self.__nsymtab
+            hg.__elabel = self.__elabel
+        return hg
+
+    def copy(self):
+        return copy.deepcopy(self)
 
     # TODO: copy?
     #@property

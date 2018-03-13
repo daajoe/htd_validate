@@ -71,9 +71,12 @@ class Decomposition(object):
     def replay(self, repl):
         assert(repl is not None)
         assert(self.graph is not None)
+        repl.reverse()  #redo repl in reverse order
         for (parent, bag, weight) in repl:
+            logging.info("searching for {0},{1},{2}".format(parent, bag, weight))
             found = False
             for t in self.tree.nodes():
+                #print self.bags[t]
                 if self.bags[t].issuperset(parent):
                     t2 = self.tree.number_of_nodes() + 1
                     self.tree.add_node(t2)
@@ -301,7 +304,9 @@ class Decomposition(object):
         raise NotImplementedError("abstract method -- subclass must override")
 
     def relabel(self, substitution, substitution_edges):
-        self.bags = relab.relabel_dict(self.bags, substitution)
+        self.bags = relab.relabel_dict(self.bags, substitution, typ=set)
+        #print self.bags
+        #assert(len(self.bags) == 0)
         self._relabel(substitution_edges)
 
     def _relabel(self, substitution_edges):
