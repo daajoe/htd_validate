@@ -8,7 +8,7 @@ from operator import itemgetter
 import networkx as nx
 from htd_validate.decompositions import Decomposition
 from htd_validate.utils import Hypergraph
-
+import htd_validate.utils.relabelling as relab
 
 class GeneralizedHypertreeDecomposition(Decomposition):
     _problem_string = 'ghtd'
@@ -36,8 +36,15 @@ class GeneralizedHypertreeDecomposition(Decomposition):
         sol = {}
         logging.debug("{0}, {0}, {0}".format(node, bag, weight))
         self.graph.fractional_cover(bag, solution=sol, opt=weight)
+        #print self.hyperedge_function, node
         for i, v in sol.iteritems():
+            if node not in self.hyperedge_function:
+                self.hyperedge_function[node] = {}
             self.hyperedge_function[node][i] = v
+
+    def _relabel(self, substitution_edges):
+        self.hyperedge_function = {node: relab.relabel_dict(he, substitution_edges=substitution_edges)
+                                   for node, he in self.hyperedge_function.iteritems()}
 
     @classmethod
     def _read_header(cls, line):

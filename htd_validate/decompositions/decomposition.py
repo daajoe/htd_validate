@@ -6,6 +6,7 @@ from collections import defaultdict
 from itertools import chain
 
 import networkx as nx
+import htd_validate.utils.relabelling as relab
 from htd_validate.utils import HypergraphPrimalView
 from networkx.drawing.nx_agraph import graphviz_layout
 
@@ -298,6 +299,13 @@ class Decomposition(object):
     @staticmethod
     def _reader(decomp, line):
         raise NotImplementedError("abstract method -- subclass must override")
+
+    def relabel(self, substitution, substitution_edges):
+        self.bags = relab.relabel_dict(self.bags, substitution)
+        self._relabel(substitution_edges)
+
+    def _relabel(self, substitution_edges):
+        pass
 
     @staticmethod
     def _read_header(line):

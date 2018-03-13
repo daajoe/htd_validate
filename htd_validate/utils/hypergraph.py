@@ -19,11 +19,13 @@
 # License along with hypergraph.py.  If not, see
 # <http://www.gnu.org/licenses/>.
 # from __future__ import print_function
+from __future__ import absolute_import
 import gzip
 
 from bz2 import BZ2File
 from cStringIO import StringIO
 from itertools import imap, izip
+from htd_validate.utils import relabelling as relab
 
 try:
     import backports.lzma as xz
@@ -225,9 +227,19 @@ class Hypergraph(object):
         #print c.statistics
         return aset
 
+    def relabel_consecutively(self, revert=True):
+        return self.relabel(relab.consecutive_substitution(self.__vertices),
+                            relab.consecutive_substitution(self.__edges),
+                            revert=revert)
+
+    def relabel(self, substitution, substitution_keys, revert=True):
+        self.__vertices = relab.relabel_sequence(self.__vertices, substitution)
+        self.__edges = relab.relabel_dict(self.__edges, substitution, substitution_keys)
+        if not revert:
+            return None, None
+        return relab.revert_substitution(substitution), relab.revert_substitution(substitution_keys)
 
     def fractional_cover(self, verts, solution=None, opt=-1):
-
         if cx is None:
             raise ImportError()
 
