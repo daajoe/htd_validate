@@ -36,10 +36,14 @@ class GeneralizedHypertreeDecomposition(Decomposition):
     def __len__(self):
         return len(self.bags)
 
+    def _connect(self, t, edge_id):
+        self.hyperedge_function[t][edge_id] = 1.0
+
     def _replay(self, node, bag, weight):
         sol = {}
         print self.graph.edges(), node, bag, weight
-        logging.debug("{0}, {1}, {2}, {3}".format(self.graph.edges(), node, bag, weight))
+        logging.info("{0}, {1}, {2}, {3}".format(self.graph.edges(), node, bag, weight))
+        logging.info("TD:, {0}, {1}, {2}".format(self.T.edges(), self.bags, self.hyperedge_function))
         self.graph.fractional_cover(bag, solution=sol, opt=weight)
         #print self.hyperedge_function, node
         for i, v in sol.iteritems():
@@ -48,9 +52,9 @@ class GeneralizedHypertreeDecomposition(Decomposition):
             self.hyperedge_function[node][i] = v
         print self.hyperedge_function[node]
         #TODO: improve check of ghtd.py such that we do not stupidely have to set everything else to 0
-        for k in self.graph.edges():
-            if k not in self.hyperedge_function[node]:
-                self.hyperedge_function[node][k] = 0
+        #for k in self.graph.edges():
+        #    if k not in self.hyperedge_function[node]:
+        #        self.hyperedge_function[node][k] = 0
 
     def _relabel(self, substitution_edges):
         self.hyperedge_function = {node: relab.relabel_dict(he, substitution_keys=substitution_edges)
@@ -120,7 +124,8 @@ class GeneralizedHypertreeDecomposition(Decomposition):
             logging.info('v = %s' % v)
             # e \in E(H), v \in e: self._edge_ids_where_v_occurs(v)
             # lambda_u_e_v: {lambda_u(e) : e \in E(H), v \in e}
-            lambda_u_e_v = map(lambda e: self.hyperedge_function[t][e], self._edge_ids_where_v_occurs(v))
+            lambda_u_e_v = map(lambda e: self.hyperedge_function[t][e] if e in self.hyperedge_function[t] else 0,
+                               self._edge_ids_where_v_occurs(v))
             logging.info('lambda(%s) = %s' % (t, lambda_u_e_v))
             logging.info('sum(%s) = %s' % (t, sum(lambda_u_e_v)))
             if sum(lambda_u_e_v) >= 1:

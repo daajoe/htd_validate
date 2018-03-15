@@ -102,6 +102,20 @@ class Hypergraph(object):
     #def edge_rank(self, n):
     #    return map(lambda x: tuple(x, len(x)), self.adjByNode(n))
 
+    def edge_into(self, vertices, globalgraph):
+        vertices = set(vertices)
+        inters = vertices.intersection(self.__vertices)
+        if len(inters) > 0:
+            assert(len(inters) == 1)
+            return inters, -1
+        else:
+            for k, v in globalgraph.__edges.iteritems():
+                inters = vertices.intersection(v).intersection(self.__vertices)
+                if len(inters) >= 2:
+                    assert(len(inters) == 2)
+                    return inters, k
+        return None, -1
+
     #--solve-limit=<n>[,<m>] : Stop search after <n> conflicts or <m> restarts
     def largest_clique_asp(self, clingoctl=None, timeout=10, enum=True, usc=True, ground=False, prevent_k_hyperedge=3, solve_limit="umax,umax"):
         if clingo is None:

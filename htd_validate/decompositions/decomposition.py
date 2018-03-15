@@ -35,6 +35,45 @@ class Decomposition(object):
     def set_graph(self, hypergraph):
         self.hypergraph = hypergraph
 
+    def findIntersectingBag(self, edge):
+        tdinter = None
+        tdfound = None
+        for i, b in self.bags.iteritems():
+            tdinter = b.intersection(edge)
+            if len(tdinter) > 0:
+                tdfound = i
+                break
+        return tdfound, tdinter
+
+    def connect(self, td, edge, edge_id):
+        assert(len(edge) <= 2)
+        tdfound = None
+        selffound = None
+        tdfound = td.findIntersectingBag(edge)[0]
+        selffound = self.findIntersectingBag(edge)[0]
+        if tdfound is None or selffound is None:
+            return False
+        t2 = self.tree.number_of_nodes()
+        if len(edge) > 1:
+            t2 = self.tree.number_of_nodes() + 1
+            self.bags[t2] = set(edge)
+            self.tree.add_node(t2)
+            self.tree.add_edge(selffound, t2)
+            self._connect(t2, edge_id)
+        for v in td.T.nodes():
+            self.tree.add_node(t2 + v)
+            self.bags[t2 + v] = td.chi[v]
+        for e in td.T.edges():
+            self.tree.add_edge(t2 + e[0], t2 + e[1])
+        if len(edge) > 1:
+            self.tree.add_edge(t2, tdfound)
+        else:
+            self.tree.add_edge(selffound, tdfound)
+        return True
+
+    def _connect(self, t, edge_id):
+        pass
+
     @classmethod
     def _from_ordering(cls, hypergraph, plot_if_td_invalid=True, ordering=None, weights=None):
         if ordering is None:
