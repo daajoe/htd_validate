@@ -89,6 +89,8 @@ class Hypergraph(object):
     #__edge_type = type(tuple)
     __edge_type = tuple
 
+    ACCURACY = 0.0000001
+
     def __init__(self, non_numerical=False, vertices=None):
         self.__edges = dict()
         if vertices is None:
@@ -254,7 +256,7 @@ class Hypergraph(object):
             return None, None
         return relab.revert_substitution(substitution), relab.revert_substitution(substitution_keys)
 
-    def fractional_cover(self, verts, solution=None, opt=-1, accuracy=0.0000001):
+    def fractional_cover(self, verts, solution=None, opt=-1, accuracy=ACCURACY):
         if cx is None:
             raise ImportError()
 

@@ -44,7 +44,7 @@ class GeneralizedHypertreeDecomposition(Decomposition):
 
     def _replay(self, node, bag, weight):
         sol = {}
-        print self.graph.edges(), node, bag, weight
+        #print self.graph.edges(), node, bag, weight
         logging.info("{0}, {1}, {2}, {3}".format(self.graph.edges(), node, bag, weight))
         logging.info("TD:, {0}, {1}, {2}".format(self.T.edges(), self.bags, self.hyperedge_function))
         self.graph.fractional_cover(bag, solution=sol, opt=weight)
@@ -53,7 +53,7 @@ class GeneralizedHypertreeDecomposition(Decomposition):
             if node not in self.hyperedge_function:
                 self.hyperedge_function[node] = {}
             self.hyperedge_function[node][i] = v
-        print self.hyperedge_function[node]
+        #print self.hyperedge_function[node]
         #TODO: improve check of ghtd.py such that we do not stupidely have to set everything else to 0
         #for k in self.graph.edges():
         #    if k not in self.hyperedge_function[node]:
@@ -135,6 +135,13 @@ class GeneralizedHypertreeDecomposition(Decomposition):
                 ret.add(v)
         logging.info("B(lambda_%s) = '%s'" % (t, ret))
         return ret
+
+    def max_bag_size(self):
+        ret = 0
+        for b in self.hyperedge_function.itervalues():
+            ret = max(ret, sum(b.itervalues()))
+        return ret
+
 
     def edge_function_holds(self):
         for t in self.tree.nodes_iter():
