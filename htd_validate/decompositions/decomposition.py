@@ -313,8 +313,12 @@ class Decomposition(object):
                 return False
         return True
 
-    def is_tree(self):
+    def is_tree(self, strict=True):
         ret = len(self.tree) == 0 or nx.is_tree(self.tree)
+        if not ret:
+            logging.warning('The underlying graph is not a tree.')
+        if not strict and not ret:
+            ret = nx.is_directed_acyclic_graph(self.tree)
         if not ret:
             logging.error('The underlying graph is not a tree.')
         return ret

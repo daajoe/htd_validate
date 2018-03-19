@@ -56,9 +56,9 @@ class TreeDecomposition(Decomposition):
                 return False
         return True
 
-    def validate(self, graph):
+    def validate(self, graph, strict=True):
         self.hypergraph = graph
-        if self.is_tree() and self.edges_covered() and self.is_connected() and self.vertices_covered():
+        if self.is_tree(strict=strict) and self.edges_covered() and self.is_connected() and self.vertices_covered():
             return True
         else:
             logging.error('ERROR in Tree Decomposition.')

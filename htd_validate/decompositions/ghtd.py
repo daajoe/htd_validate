@@ -152,9 +152,9 @@ class GeneralizedHypertreeDecomposition(Decomposition):
                 return False
         return True
 
-    def validate(self, graph):
+    def validate(self, graph, strict=True):
         self.hypergraph = graph
-        if self.is_tree() and self.edges_covered() and self.is_connected() and self.edge_function_holds():
+        if self.is_tree(strict=strict) and self.edges_covered() and self.is_connected() and self.edge_function_holds():
             return True
         else:
             logging.error('ERROR in Tree Decomposition.')
