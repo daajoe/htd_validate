@@ -311,8 +311,8 @@ class Hypergraph(object):
     #    return [x for x in e if x not in p]
 
     def induce_edges(self, es):
-        for e in es:
-            self.add_hyperedge([x for x in e if x in self.__vertices])
+        for k, e in es.iteritems():
+            self.add_hyperedge([x for x in e if x in self.__vertices], edge_id=k)
 
     #can also contract edge parts >= 2, e[0] is the part of the edge that is kept
     def contract_edge(self, e, erepr):
@@ -564,14 +564,15 @@ class Hypergraph(object):
         self.__vertices.add(v)
         return v
 
-    def add_hyperedge(self, X, name=None):
+    def add_hyperedge(self, X, name=None, edge_id=None):
         #print name
         if len(X) <= 1:
             return
         if self.__non_numerical:
             X = map(self.__nsymtab.get, X)
         #print X
-        edge_id = len(self.__edges) + 1
+        if edge_id is None:
+            edge_id = len(self.__edges) + 1
 
         if self.__non_numerical and name is not None:
             self.__elabel[edge_id] = name

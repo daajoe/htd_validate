@@ -61,7 +61,7 @@ class HypergraphPrimalView(object): #(nx.graph): #https://networkx.github.io/doc
         if not force_copy and self.hg.nodes() == set(v):
             return self
         h = Hypergraph(vertices=v)
-        h.induce_edges(self.__hg.edges().values())
+        h.induce_edges(self.__hg.edges())
         return HypergraphPrimalView(h)
 
     def __str__(self):

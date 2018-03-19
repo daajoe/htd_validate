@@ -45,31 +45,47 @@ class Decomposition(object):
                 break
         return tdfound, tdinter
 
-    def connect(self, td, edge, edge_id):
-        assert(len(edge) <= 2)
+    def connect(self, td, edge=None, edge_id=None):
+        assert((edge is None) == (edge_id is None))
+        assert(edge is None or len(edge) <= 2)
+
         tdfound = None
         selffound = None
-        tdfound = td.findIntersectingBag(edge)[0]
-        selffound = self.findIntersectingBag(edge)[0]
-        if tdfound is None or selffound is None:
-            return False
+
         t2 = self.tree.number_of_nodes()
-        if len(edge) > 1:
-            t2 = self.tree.number_of_nodes() + 1
-            self.bags[t2] = set(edge)
-            self.tree.add_node(t2)
-            self.tree.add_edge(selffound, t2)
-            self._connect(t2, edge_id)
+        if edge is not None:
+            tdfound = td.findIntersectingBag(edge)[0]
+            selffound = self.findIntersectingBag(edge)[0]
+            if tdfound is None or selffound is None:
+                return False
+            tdfound += t2   #relabelling
+
+            if len(edge) > 1:
+                t2 += 1
+                self.bags[t2] = set(edge)
+                self.tree.add_node(t2)
+                self.tree.add_edge(selffound, t2)
+                self._connect(t2, edge_id)
+        else:
+            selffound = self.tree.nodes()[0]
+            tdfound = t2 + td.T.nodes()[0]
+
+        #copy / relabel TD nodes
         for v in td.T.nodes():
             self.tree.add_node(t2 + v)
             self.bags[t2 + v] = td.chi[v]
+            self._connect_weights(t2 + v, v, td)
         for e in td.T.edges():
             self.tree.add_edge(t2 + e[0], t2 + e[1])
-        if len(edge) > 1:
+
+        if edge is not None and len(edge) > 1:
             self.tree.add_edge(t2, tdfound)
         else:
             self.tree.add_edge(selffound, tdfound)
         return True
+
+    def _connect_weights(self, t, old_t, td):
+        pass
 
     def _connect(self, t, edge_id):
         pass

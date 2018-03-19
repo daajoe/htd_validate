@@ -36,6 +36,9 @@ class GeneralizedHypertreeDecomposition(Decomposition):
     def __len__(self):
         return len(self.bags)
 
+    def _connect_weights(self, t, old_t, td):
+        self.hyperedge_function[t] = td.weights[old_t]
+
     def _connect(self, t, edge_id):
         self.hyperedge_function[t][edge_id] = 1.0
 
