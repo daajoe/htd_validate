@@ -92,7 +92,7 @@ class GeneralizedHypertreeDecomposition(Decomposition):
         ret = set()
         # {v \in V(H) : (sum_{e \in E(H), v \in e} lambda_u(e)) \geq 1 } =>
         # {v : v \in V(H), (sum{lambda_u(e) : e \in E(H), v \in e}) \geq 1 }
-        for v in self.hypergraph.nodes_iter():
+        for v in self.hypergraph.nodes():
             logging.info('v = %s' % v)
             # e \in E(H), v \in e: self._edge_ids_where_v_occurs(v)
             # lambda_u_e_v: {lambda_u(e) : e \in E(H), v \in e}
@@ -105,7 +105,7 @@ class GeneralizedHypertreeDecomposition(Decomposition):
         return ret
 
     def edge_function_holds(self):
-        for t in self.tree.nodes_iter():
+        for t in self.tree.nodes():
             if not (self.bags[t] <= self._B(t)):
                 logging.error('Edge function property does not hold for node "%s"' % t)
                 logging.error(
@@ -122,7 +122,7 @@ class GeneralizedHypertreeDecomposition(Decomposition):
             return False
 
     def write(self, ostream=sys.stdout):
-        tree_mapping = {org_id: id for id, org_id in izip(count(start=1), self.tree.nodes_iter())}
+        tree_mapping = {org_id: id for id, org_id in izip(count(start=1), self.tree.nodes())}
         tree = nx.relabel_nodes(self.tree, tree_mapping, copy=True)
         num_vertices = reduce(lambda x, y: max(x, max(y or [0])), self.bags.itervalues(), 0)
         num_hyperedges = len(self.hypergraph.edges())
@@ -149,7 +149,7 @@ class GeneralizedHypertreeDecomposition(Decomposition):
 
     def width(self):
         weight = [0]  # special case for the empty graph
-        for t in self.tree.nodes_iter():
+        for t in self.tree.nodes():
             weight.append(sum(self.hyperedge_function[t].itervalues()))
         logging.info("Width is '%s'." % max(weight))
         return max(weight)
