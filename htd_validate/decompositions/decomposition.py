@@ -402,7 +402,7 @@ class Decomposition(object):
             nx.draw(hg, pos)
             plt.show()
 
-            # plt.figure(num=None, figsize=(20, 20), dpi=80)
+            plt.figure(num=None, figsize=(20, 20), dpi=80)
 
             # matplotlib.use('TkAgg')
             import warnings
