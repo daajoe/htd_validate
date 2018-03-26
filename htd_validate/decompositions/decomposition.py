@@ -130,7 +130,7 @@ class Decomposition(object):
         for (parent, bag, weight) in repl:
             logging.info("searching for {0},{1},{2}".format(parent, bag, weight))
             found = False
-            for t in self.tree.nodes():
+            for t in list(self.tree.nodes()):
                 #print self.bags[t]
                 if self.bags[t].issuperset(parent):
                     t2 = self.tree.number_of_nodes() + 1
