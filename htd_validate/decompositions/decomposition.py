@@ -67,8 +67,8 @@ class Decomposition(object):
                 self.tree.add_edge(selffound, t2)
                 self._connect(t2, edge_id)
         else:
-            selffound = self.tree.nodes()[0]
-            tdfound = t2 + td.T.nodes()[0]
+            selffound = list(self.tree.nodes())[0]
+            tdfound = t2 + list(td.T.nodes())[0]
 
         #copy / relabel TD nodes
         for v in td.T.nodes():
