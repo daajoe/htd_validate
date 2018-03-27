@@ -2,10 +2,12 @@ import logging
 import sys
 from cStringIO import StringIO
 from collections import defaultdict
+from decimal import Decimal
 from itertools import count, imap, izip
 from operator import itemgetter
 
 import networkx as nx
+import numpy as np
 from htd_validate.decompositions import Decomposition
 from htd_validate.utils import Hypergraph
 import htd_validate.utils.relabelling as relab
@@ -131,7 +133,11 @@ class GeneralizedHypertreeDecomposition(Decomposition):
                                self._edge_ids_where_v_occurs(v))
             logging.info('lambda(%s) = %s' % (t, lambda_u_e_v))
             logging.info('sum(%s) = %s' % (t, sum(lambda_u_e_v)))
-            if sum(lambda_u_e_v) >= 1:
+
+            if sum(map(lambda x: round(x,9), lambda_u_e_v)) >= 1:
+            #REQUIRED DUE TO FLOATING POINT ISSUES WITH LINUX
+            # if sum(lambda_u_e_v)) >= 1:
+            # if sum(lambda_u_e_v) >= 0.9999999999999:
                 ret.add(v)
         logging.info("B(lambda_%s) = '%s'" % (t, ret))
         return ret
