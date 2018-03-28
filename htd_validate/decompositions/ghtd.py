@@ -23,7 +23,8 @@ class GeneralizedHypertreeDecomposition(Decomposition):
     def graph_type():
         return Hypergraph.__name__
 
-    def __init__(self, hypergraph=None, plot_if_td_invalid=False, tree=None, bags=None, hyperedge_function=None, epsilon=None):
+    def __init__(self, hypergraph=None, plot_if_td_invalid=False, tree=None, bags=None, hyperedge_function=None,
+                 epsilon=None):
         if not epsilon:
             epsilon = Decimal(0.001)
         self.epsilon = epsilon

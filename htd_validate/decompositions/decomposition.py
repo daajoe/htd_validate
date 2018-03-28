@@ -155,7 +155,10 @@ class Decomposition(object):
     def _replay(self, node, bag, weight):
         pass
 
-    def __init__(self, hypergraph=None, plot_if_td_invalid=True, tree=None, bags=None, hyperedge_function=None):
+    def __init__(self, hypergraph=None, plot_if_td_invalid=True, tree=None, bags=None, hyperedge_function=None,
+                 checker_epsilon=None):
+        if checker_epsilon:
+            self.__epsilon = checker_epsilon
         if tree is None:
             tree = nx.DiGraph()
         if bags is None:
