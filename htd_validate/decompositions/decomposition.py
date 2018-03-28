@@ -5,8 +5,8 @@ from cStringIO import StringIO
 from collections import defaultdict
 from itertools import chain
 
-import networkx as nx
 import htd_validate.utils.relabelling as relab
+import networkx as nx
 from htd_validate.utils import HypergraphPrimalView
 from networkx.drawing.nx_agraph import graphviz_layout
 
@@ -46,8 +46,8 @@ class Decomposition(object):
         return tdfound, tdinter
 
     def connect(self, td, edge=None, edge_id=None):
-        assert((edge is None) == (edge_id is None))
-        assert(edge is None or len(edge) <= 2)
+        assert ((edge is None) == (edge_id is None))
+        assert (edge is None or len(edge) <= 2)
 
         tdfound = None
         selffound = None
@@ -58,7 +58,7 @@ class Decomposition(object):
             selffound = self.findIntersectingBag(edge)[0]
             if tdfound is None or selffound is None:
                 return False
-            tdfound += t2   #relabelling
+            tdfound += t2  # relabelling
 
             if len(edge) > 1:
                 t2 += 1
@@ -70,7 +70,7 @@ class Decomposition(object):
             selffound = list(self.tree.nodes())[0]
             tdfound = t2 + list(td.T.nodes())[0]
 
-        #copy / relabel TD nodes
+        # copy / relabel TD nodes
         for v in td.T.nodes():
             self.tree.add_node(t2 + v)
             self.bags[t2 + v] = td.chi[v]
@@ -91,7 +91,7 @@ class Decomposition(object):
         pass
 
     @classmethod
-    def _from_ordering(cls, hypergraph, plot_if_td_invalid=True, ordering=None, weights=None):
+    def _from_ordering(cls, hypergraph, plot_if_td_invalid=True, ordering=None, weights=None, checker_epsilon=None):
         if ordering is None:
             ordering = sorted(hypergraph.nodes())
 
@@ -120,36 +120,37 @@ class Decomposition(object):
                 logging.debug("chi[nxt]=%s" % chi[nxt])
                 tree.add_edge(nxt, v)
         ret = cls(hypergraph=hypergraph, plot_if_td_invalid=plot_if_td_invalid, tree=tree, bags=chi,
-                  hyperedge_function=weights)
+                  hyperedge_function=weights, epsilon=checker_epsilon)
         return ret
 
     def replay(self, repl):
-        assert(repl is not None)
-        assert(self.graph is not None)
-        repl.reverse()  #redo repl in reverse order
+        assert (repl is not None)
+        assert (self.graph is not None)
+        repl.reverse()  # redo repl in reverse order
         for (parent, bag, weight) in repl:
             logging.info("searching for {0},{1},{2}".format(parent, bag, weight))
             found = False
             for t in list(self.tree.nodes()):
-                #print self.bags[t]
+                # print self.bags[t]
                 if self.bags[t].issuperset(parent):
                     t2 = self.tree.number_of_nodes() + 1
                     self.tree.add_node(t2)
                     self.tree.add_edge(t, t2)
                     parent = set(parent)
                     parent.update(bag)
-                    self.bags[t2] = parent #set(bag)
-                    self._replay(t2, parent, weight)   #TODO: use additional stored weight info, instead of recomputation
+                    self.bags[t2] = parent  # set(bag)
+                    self._replay(t2, parent,
+                                 weight)  # TODO: use additional stored weight info, instead of recomputation
                     found = True
             if not found:
-                assert(len(parent) == 0)
-                assert(len(self.tree.nodes()) == 0)
+                assert (len(parent) == 0)
+                assert (len(self.tree.nodes()) == 0)
                 t2 = 1
                 self.tree.add_node(t2)
                 self.bags[t2] = set(bag)
-                self._replay(t2, bag, weight)   #TODO: use additional stored weight info, instead of recomputation
-                #found = True
-            #assert(found)
+                self._replay(t2, bag, weight)  # TODO: use additional stored weight info, instead of recomputation
+                # found = True
+            # assert(found)
 
     def _replay(self, node, bag, weight):
         pass
@@ -365,8 +366,8 @@ class Decomposition(object):
 
     def relabel(self, substitution, substitution_edges):
         self.bags = relab.relabel_dict(self.bags, substitution, typ=set)
-        #print self.bags
-        #assert(len(self.bags) == 0)
+        # print self.bags
+        # assert(len(self.bags) == 0)
         self._relabel(substitution_edges)
 
     def _relabel(self, substitution_edges):
@@ -430,7 +431,6 @@ class Decomposition(object):
                 nx.draw_networkx_labels(m, pos)
             nx.draw(m, pos)
             plt.show()
-
 
     @staticmethod
     def layouting(layout, m):

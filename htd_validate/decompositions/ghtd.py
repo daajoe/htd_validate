@@ -6,11 +6,11 @@ from decimal import Decimal
 from itertools import count, imap, izip
 from operator import itemgetter
 
+import htd_validate.utils.relabelling as relab
 import networkx as nx
-import numpy as np
 from htd_validate.decompositions import Decomposition
 from htd_validate.utils import Hypergraph
-import htd_validate.utils.relabelling as relab
+
 
 class GeneralizedHypertreeDecomposition(Decomposition):
     _problem_string = 'ghtd'
@@ -23,7 +23,10 @@ class GeneralizedHypertreeDecomposition(Decomposition):
     def graph_type():
         return Hypergraph.__name__
 
-    def __init__(self, hypergraph=None, plot_if_td_invalid=False, tree=None, bags=None, hyperedge_function=None):
+    def __init__(self, hypergraph=None, plot_if_td_invalid=False, tree=None, bags=None, hyperedge_function=None, epsilon=None):
+        if not epsilon:
+            epsilon = Decimal(0.001)
+        self.epsilon = epsilon
         if not hyperedge_function:
             self.hyperedge_function = defaultdict(dict)
         else:
@@ -46,18 +49,18 @@ class GeneralizedHypertreeDecomposition(Decomposition):
 
     def _replay(self, node, bag, weight):
         sol = {}
-        #print self.graph.edges(), node, bag, weight
+        # print self.graph.edges(), node, bag, weight
         logging.info("{0}, {1}, {2}, {3}".format(self.graph.edges(), node, bag, weight))
         logging.info("TD:, {0}, {1}, {2}".format(self.T.edges(), self.bags, self.hyperedge_function))
         self.graph.fractional_cover(bag, solution=sol, opt=weight)
-        #print self.hyperedge_function, node
+        # print self.hyperedge_function, node
         for i, v in sol.iteritems():
             if node not in self.hyperedge_function:
                 self.hyperedge_function[node] = {}
             self.hyperedge_function[node][i] = v
-        #print self.hyperedge_function[node]
-        #TODO: improve check of ghtd.py such that we do not stupidely have to set everything else to 0
-        #for k in self.graph.edges():
+        # print self.hyperedge_function[node]
+        # TODO: improve check of ghtd.py such that we do not stupidely have to set everything else to 0
+        # for k in self.graph.edges():
         #    if k not in self.hyperedge_function[node]:
         #        self.hyperedge_function[node][k] = 0
 
@@ -132,12 +135,13 @@ class GeneralizedHypertreeDecomposition(Decomposition):
             lambda_u_e_v = map(lambda e: self.hyperedge_function[t][e] if e in self.hyperedge_function[t] else 0,
                                self._edge_ids_where_v_occurs(v))
             logging.info('lambda(%s) = %s' % (t, lambda_u_e_v))
-            logging.info('sum(%s) = %s' % (t, sum(lambda_u_e_v)))
-
-            if sum(map(lambda x: round(x,9), lambda_u_e_v)) >= 1:
-            #REQUIRED DUE TO FLOATING POINT ISSUES WITH LINUX
-            # if sum(lambda_u_e_v)) >= 1:
-            # if sum(lambda_u_e_v) >= 0.9999999999999:
+            logging.info('sum(%s) = %s' % (t, str(sum(lambda_u_e_v))))
+            bag_sum = sum(map(lambda x: Decimal(x), lambda_u_e_v)) + Decimal(self.epsilon)
+            logging.info("sum_prec(%s)=%s" % (v, str(bag_sum)))
+            logging.info("  @Epsilon=%s" % self.epsilon)
+            # REQUIRED DUE TO FLOATING POINT ISSUES
+            # see: https://docs.python.org/2/tutorial/floatingpoint.html
+            if bag_sum >= 1:
                 ret.add(v)
         logging.info("B(lambda_%s) = '%s'" % (t, ret))
         return ret
@@ -147,7 +151,6 @@ class GeneralizedHypertreeDecomposition(Decomposition):
         for b in self.hyperedge_function.itervalues():
             ret = max(ret, sum(b.itervalues()))
         return ret
-
 
     def edge_function_holds(self):
         for t in self.tree.nodes():

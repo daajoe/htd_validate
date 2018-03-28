@@ -15,7 +15,7 @@ class FractionalHypertreeDecomposition(GeneralizedHypertreeDecomposition):
         pass
 
     @classmethod
-    def from_ordering(cls, hypergraph, ordering=None, weights=None):
+    def from_ordering(cls, hypergraph, ordering=None, weights=None, checker_epsilon=None):
         logging.info("Constructing Decomposition from ordering")
 
         if ordering is None:
@@ -25,12 +25,13 @@ class FractionalHypertreeDecomposition(GeneralizedHypertreeDecomposition):
             tree.add_node(1)
             chi = {1: ordering[0]}
             return FractionalHypertreeDecomposition(hypergraph=hypergraph, plot_if_td_invalid=True, tree=tree, bags=chi,
-                                                    hyperedge_function=weights)
+                                                    hyperedge_function=weights, epsilon=checker_epsilon)
 
         logging.debug("Ordering: %s" % ordering)
 
         pgraph_view = HypergraphPrimalView(hypergraph=hypergraph)
-        fhtd = cls._from_ordering(hypergraph=pgraph_view, plot_if_td_invalid=True, ordering=ordering, weights=weights)
+        fhtd = cls._from_ordering(hypergraph=pgraph_view, plot_if_td_invalid=True, ordering=ordering, weights=weights,
+                                  checker_epsilon=checker_epsilon)
 
         logging.debug("==== Computed Fhtd: ====")
         logging.debug("Fhtd: edges=%s ; bags=%s; weights=%s" % (fhtd.T.edges(), fhtd.chi, fhtd.hyperedge_function))
@@ -55,10 +56,12 @@ class FractionalHypertreeDecomposition(GeneralizedHypertreeDecomposition):
     def graph_type():
         return Hypergraph.__name__
 
-    def __init__(self, hypergraph=None, plot_if_td_invalid=False, tree=None, bags=None, hyperedge_function=None):
+    def __init__(self, hypergraph=None, plot_if_td_invalid=False, tree=None, bags=None, hyperedge_function=None,
+                 epsilon=None):
         super(FractionalHypertreeDecomposition, self).__init__(hypergraph=hypergraph,
                                                                plot_if_td_invalid=plot_if_td_invalid, tree=tree,
-                                                               bags=bags, hyperedge_function=hyperedge_function)
+                                                               bags=bags, hyperedge_function=hyperedge_function,
+                                                               epsilon=epsilon)
         self.plot_if_td_invalid = plot_if_td_invalid
         logging.debug('edges = %s' % self.tree.edges())
 
@@ -69,8 +72,9 @@ class FractionalHypertreeDecomposition(GeneralizedHypertreeDecomposition):
     # TODO: technically the same as ghtd, but we skip the integer check
     def validate(self, graph, strict=True):
         self.hypergraph = graph
-        if self.is_tree(strict=strict) and self.edges_covered() and self.is_connected() and self.edge_function_holds(): # and \
-                #self.edge_function_holds():
+        if self.is_tree(
+                strict=strict) and self.edges_covered() and self.is_connected() and self.edge_function_holds():  # and \
+            # self.edge_function_holds():
             return True
         else:
             logging.error('ERROR in Tree Decomposition.')
