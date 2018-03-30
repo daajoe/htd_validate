@@ -20,23 +20,29 @@
 # from __future__ import print_function
 import deprecation
 import networkx as nx
-#import cplex
+# import cplex
 import copy
 
 from htd_validate.utils.formula import Formula
 from hypergraph import Hypergraph
 
 import subprocess
-import warnings
-import functools
-import sys
-import io
-import threading
+# import cplex
+import copy
+import subprocess
 
-class HypergraphPrimalView(object): #(nx.graph): #https://networkx.github.io/documentation/networkx-1.11/_modules/networkx/classes/graph.html#Graph
+import deprecation
+import networkx as nx
+from htd_validate.utils.formula import Formula
+from hypergraph import Hypergraph
+
+
+class HypergraphPrimalView(object):
+    # (nx.graph):
+    # #https://networkx.github.io/documentation/networkx-1.11/_modules/networkx/classes/graph.html#Graph
 
     def __init__(self, hypergraph):
-        #super(HypergraphPrimalView, self).__init__()
+        # super(HypergraphPrimalView, self).__init__()
         self.__hg = hypergraph
 
     @property
@@ -54,7 +60,9 @@ class HypergraphPrimalView(object): #(nx.graph): #https://networkx.github.io/doc
     def __copy__(self):
         return HypergraphPrimalView(copy.copy(self.__hg))
 
-    def __deepcopy__(self, memodict={}):
+    def __deepcopy__(self, memodict=None):
+        if memodict is None:
+            memodict = {}
         return HypergraphPrimalView(copy.deepcopy(self.__hg, memodict))
 
     def induced_graph(self, v, force_copy=False):
@@ -268,15 +276,15 @@ class HypergraphPrimalView(object): #(nx.graph): #https://networkx.github.io/doc
         []
 
         """
-        #adj = self.adj
+        # adj = self.adj
         try:
-            #nbrs = list(adjByNode[n].keys())  # keys handles self-loops (allow mutation later)
+            # nbrs = list(adjByNode[n].keys())  # keys handles self-loops (allow mutation later)
             del self.__hg[n]
         except KeyError:  # NetworkXError if n not in self
             raise nx.NetworkXError("The node %s is not in the graph." % (n,))
-        #for u in nbrs:
+        # for u in nbrs:
         #    del adj[u][n]  # remove all edges n-u in graph
-        #del adj[n]  # now remove node
+        # del adj[n]  # now remove node
 
     def __delitem__(self, v):
         self.remove_node(v)
@@ -307,17 +315,17 @@ class HypergraphPrimalView(object): #(nx.graph): #https://networkx.github.io/doc
         []
 
         """
-        #adj = self.adj
+        # adj = self.adj
         for n in nodes:
             try:
                 del self.__hg[n]
-                #for u in list(adj[n].keys()):  # keys() handles self-loops
+                # for u in list(adj[n].keys()):  # keys() handles self-loops
                 #    del adj[u][n]  # (allows mutation of dict in loop)
-                #del adj[n]
+                # del adj[n]
             except KeyError:
                 pass
 
-    #@deprecated("not tested; now replaced by ASP version in hypergraph")
+    # @deprecated("not tested; now replaced by ASP version in hypergraph")
     @deprecation.deprecated(deprecated_in="1.0", removed_in="1.0",
                             current_version="1.0",
                             details="not tested; now replaced by ASP version for various reasons in Hypergraph")
@@ -331,7 +339,7 @@ class HypergraphPrimalView(object): #(nx.graph): #https://networkx.github.io/doc
 
             p = subprocess.Popen(["glucose", "-model"], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
             clause.stream = p.stdin
-            #space for safety (clauses and variables need to be corrected later on)
+            # space for safety (clauses and variables need to be corrected later on)
             clause.writeHeader(safety=True)
 
             for u in self.nodes():
@@ -340,13 +348,13 @@ class HypergraphPrimalView(object): #(nx.graph): #https://networkx.github.io/doc
                         clause.addClause("-{0} -{1}".format(clause.map(u), clause.map(v)))
 
             for e in self.__hg.edges.values():
-                #for k in xrange(3, len(e) + 1):
-                #prevent 3 elements from the same edge
+                # for k in xrange(3, len(e) + 1):
+                # prevent 3 elements from the same edge
 
                 k = 3
                 sub = range(0, k)
 
-                while True: #sub[0] <= len(e) - k:
+                while True:  # sub[0] <= len(e) - k:
 
                     cl = ""
                     for v in sub:
@@ -356,15 +364,14 @@ class HypergraphPrimalView(object): #(nx.graph): #https://networkx.github.io/doc
                     if sub[0] == len(e) - k:
                         break
 
-                    #next position
+                    # next position
                     for i in xrange(k - 1, -1, -1):
                         if sub[i] < len(e) - (k - i - 1):
                             sub[i] += 1
                             for j in xrange(i + 1, k):
                                 sub[j] = sub[i] + (j - i)
 
-
-            #seek to the file beginning and correct header
+            # seek to the file beginning and correct header
             clause.writeHeader()
             clause.close()
 
@@ -375,31 +382,31 @@ class HypergraphPrimalView(object): #(nx.graph): #https://networkx.github.io/doc
                 vals = line.split(" ")
                 print vals
 
-    #handle with care!
-    #returns tuple (list of "almost" (depending on \emph{simplicial_diff}) simplicial vertices, clique) per clique
-    #fixme: modify/replace nx.enumerate_all_cliques!
+    # handle with care!
+    # returns tuple (list of "almost" (depending on \emph{simplicial_diff}) simplicial vertices, clique) per clique
+    # fixme: modify/replace nx.enumerate_all_cliques!
     def simplicial_iter(self, simplicial_diff=0, clique_prevent_he_at_least=3, clique_prevent_he_up_to=3):
         cl = None
         for k in xrange(clique_prevent_he_up_to, clique_prevent_he_at_least - 1, -1):
             maxcl = 0
             aset = self.__hg.largest_clique_asp(clingoctl=cl, prevent_k_hyperedge=k, ground=False)
             cl = aset[3]
-            #print c
-            #for clique in nx.enumerate_all_cliques(self) if not max_clique else self.__hg.largest_clique_asp()[2]:
+            # print c
+            # for clique in nx.enumerate_all_cliques(self) if not max_clique else self.__hg.largest_clique_asp()[2]:
             for clique in aset[2]:
-                #if not max_clique and len(clique) > clique_sizes_up_to:
+                # if not max_clique and len(clique) > clique_sizes_up_to:
                 #    return
                 maxcl = max(maxcl, len(clique))
-                #if clique_sizes_at_least <= len(clique): # <= clique_sizes_up_to:
+                # if clique_sizes_at_least <= len(clique): # <= clique_sizes_up_to:
                 nodes_of_clique = []
                 for c in clique:
                     simpl = self.degree(c) - len(clique) + 1
-                    assert(simpl >= 0)
+                    assert (simpl >= 0)
                     if simplicial_diff == simpl or 0 < simpl <= simplicial_diff:
                         nodes_of_clique.append((c, simpl))
                 if k > 3 or len(nodes_of_clique) > 0:
                     yield (nodes_of_clique, clique, (k, maxcl))
-            if k == 3: #maybe we did not yield yet, get a chance now
+            if k == 3:  # maybe we did not yield yet, get a chance now
                 yield ([], [], (k, maxcl))
         # adj = self.__hg.adj
         # blacklist = set()
@@ -450,7 +457,7 @@ class HypergraphPrimalView(object): #(nx.graph): #https://networkx.github.io/doc
         """
         if data:
             raise NotImplementedError()
-            #return iter(self.node.items())
+            # return iter(self.node.items())
         return self.__hg.nodes_iter()
 
     def nodes(self, data=False):
@@ -597,7 +604,7 @@ class HypergraphPrimalView(object): #(nx.graph): #https://networkx.github.io/doc
             return v in self.__hg.adjByNode(u)
         except KeyError:
             return False
-        #raise NotImplementedError()
+        # raise NotImplementedError()
 
     def neighbors(self, n, strict=True):
         """Return a list of the nodes connected to the node n.
@@ -933,7 +940,7 @@ class HypergraphPrimalView(object): #(nx.graph): #https://networkx.github.io/doc
 
     def biconnected_components(self):
         return nx.biconnected_components(self)
-        #for b in nx.biconnected_components(self):
+        # for b in nx.biconnected_components(self):
         #    yield b
 
     def degree_iter(self, nbunch=None, weight=None):
@@ -971,9 +978,9 @@ class HypergraphPrimalView(object): #(nx.graph): #https://networkx.github.io/doc
         [(0, 1), (1, 2)]
 
         """
-        if nbunch is None:      #non lazy
+        if nbunch is None:  # non lazy
             nodes_nbrs = self.__hg.adj.items()
-        else:                   #lazy
+        else:  # lazy
             nodes_nbrs = ((n, self.__hg.adjByNode(n)) for n in self.nbunch_iter(nbunch))
 
         if weight is None:
@@ -1033,7 +1040,7 @@ class HypergraphPrimalView(object): #(nx.graph): #https://networkx.github.io/doc
         >>> H = G.copy()
 
         """
-        #raise NotImplementedError()
+        # raise NotImplementedError()
         return copy.deepcopy(self)
 
     def is_multigraph(self):
@@ -1086,8 +1093,8 @@ class HypergraphPrimalView(object): #(nx.graph): #https://networkx.github.io/doc
         >>> H.edges()
         [(0, 1)]
         """
-        return self.copy() #copy.deepcopy(self)
-        #raise NotImplementedError()
+        return self.copy()  # copy.deepcopy(self)
+        # raise NotImplementedError()
 
     def to_undirected(self):
         """Return an undirected copy of the graph.
@@ -1124,7 +1131,7 @@ class HypergraphPrimalView(object): #(nx.graph): #https://networkx.github.io/doc
         >>> G2.edges()
         [(0, 1)]
         """
-        #return NotImplementedError()
+        # return NotImplementedError()
         return deepcopy(self)
 
     def subgraph(self, nbunch):
@@ -1218,11 +1225,12 @@ class HypergraphPrimalView(object): #(nx.graph): #https://networkx.github.io/doc
 
     def iter_twin_vertices(self):
         ngb = {}
-        for k in self.__hg:
-            tp = tuple(sorted(self.__hg.adjByNode(k).keys()))
+        #TODO: fixme here seems to be something off
+        for v in self.__hg.nodes_iter():
+            tp = tuple(sorted(self.__hg.adjByNode(v).keys()))
             if tp not in ngb:
                 ngb[tp] = []
-            ngb[tp].append(k)
+            ngb[tp].append(v)
 
         for v in ngb.values():
             yield v
@@ -1305,11 +1313,11 @@ class HypergraphPrimalView(object): #(nx.graph): #https://networkx.github.io/doc
         or None, a NetworkXError is raised.  Also, if any object in
         nbunch is not hashable, a NetworkXError is raised.
         """
-        if nbunch is None:   # include all nodes via iterator
+        if nbunch is None:  # include all nodes via iterator
             bunch = self.nodes_iter()
         elif nbunch in self:  # if nbunch is a single node
             bunch = iter([nbunch])
-        else:                # if nbunch is a sequence of nodes
+        else:  # if nbunch is a sequence of nodes
             def bunch_iter(nlist, adj):
                 try:
                     for n in nlist:
@@ -1324,8 +1332,9 @@ class HypergraphPrimalView(object): #(nx.graph): #https://networkx.github.io/doc
                     # capture error for unhashable node.
                     elif 'hashable' in message:
                         raise nx.NetworkXError(
-                            "Node %s in the sequence nbunch is not a valid node."%n)
+                            "Node %s in the sequence nbunch is not a valid node." % n)
                     else:
                         raise
+
             bunch = bunch_iter(nbunch, self.nodes())
         return bunch
