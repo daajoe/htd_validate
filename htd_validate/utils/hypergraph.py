@@ -120,6 +120,18 @@ class Hypergraph(object):
                     return inters, k
         return None, -1
 
+    def iter_twin_vertices(self):
+        ngb = {}
+        for v in self.nodes_iter():
+            tp = tuple(sorted(tuple(sorted(vi for vi in e if vi != v)) for e in self.incident_edges(v).values()))
+            #print tp
+            if tp not in ngb:
+                ngb[tp] = []
+            ngb[tp].append(v)
+
+        for v in ngb.values():
+            yield v
+
     # --solve-limit=<n>[,<m>] : Stop search after <n> conflicts or <m> restarts
     def largest_clique_asp(self, clingoctl=None, timeout=10, enum=True, usc=True, ground=False, prevent_k_hyperedge=3,
                            solve_limit="umax,umax"):

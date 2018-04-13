@@ -17,6 +17,11 @@ class TestHypergraph(vtd.ValidateGraphTestCase):
     def tearDown(self):
         pass
 
+    def testTwins(self):
+        hg = self.loadFile(self.filePath("testHG/") + "C13_7.edge")
+        print list(hg.iter_twin_vertices())
+        assert False
+
     def testAdj(self):
         hg = self.loadFile(self.filePath("testHG/") + "C13_7.edge")
         self.assertIsNotNone(hg)
