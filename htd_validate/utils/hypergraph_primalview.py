@@ -1227,7 +1227,7 @@ class HypergraphPrimalView(object):
         ngb = {}
         #TODO: fixme here seems to be something off
         for v in self.__hg.nodes_iter():
-            tp = tuple(sorted(self.__hg.adjByNode(v).keys()))
+            tp = tuple(sorted(self.__hg.adjByNode(v, strict=False).keys()))
             if tp not in ngb:
                 ngb[tp] = []
             ngb[tp].append(v)
