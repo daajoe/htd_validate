@@ -21,10 +21,10 @@ class TreeDecomposition(Decomposition):
         return Graph.__name__
 
     def __init__(self, hypergraph=None, plot_if_td_invalid=False, tree=None, bags=None, hyperedge_function=None,
-                 checker_epsilon=None):
+                 epsilon=None):
         if hyperedge_function is not None:
             raise TypeError("Tree Decompositions do not allow for a hyperedge function.")
-        if checker_epsilon is not None:
+        if epsilon is not None:
             raise TypeError("Tree Decompositions provide exact results. No epsilon expected.")
         super(TreeDecomposition, self).__init__(hypergraph=hypergraph, tree=tree, bags=bags)
         self.plot_if_td_invalid = plot_if_td_invalid

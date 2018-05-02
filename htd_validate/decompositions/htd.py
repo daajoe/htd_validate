@@ -17,8 +17,8 @@ class HypertreeDecomposition(GeneralizedHypertreeDecomposition):
     def graph_type():
         return Hypergraph.__name__
 
-    def __init__(self, hypergraph=None, tree=None, bags=None, hyperedge_function=None, checker_epsilon=None):
-        if checker_epsilon is not None:
+    def __init__(self, hypergraph=None, tree=None, bags=None, hyperedge_function=None, epsilon=None):
+        if epsilon is not None:
             raise TypeError("Tree Decompositions provide exact results. No epsilon expected.")
         super(HypertreeDecomposition, self).__init__(hypergraph=hypergraph, tree=tree, bags=bags,
                                                      hyperedge_function=hyperedge_function)

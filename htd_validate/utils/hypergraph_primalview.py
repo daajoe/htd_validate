@@ -2,10 +2,10 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright 2018
-# Johannes K. Fichte, Markus Hecher, TU Wien, Austria*
+# Johannes K. Fichte, TU Wien, Austria*
+# Markus A. Hecher, TU Wien, Austria*
 #
 # *) also affiliated with University of Potsdam(R) :P
-# *) is not allowed to contain parts of nuts ;P
 #
 # hypergraph.py is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -1224,15 +1224,7 @@ class HypergraphPrimalView(object):
             return float(s)
 
     def iter_twin_vertices(self):
-        ngb = {}
-        #TODO: fixme here seems to be something off
-        for v in self.__hg.nodes_iter():
-            tp = tuple(sorted(self.__hg.adjByNode(v, strict=False).keys()))
-            if tp not in ngb:
-                ngb[tp] = []
-            ngb[tp].append(v)
-
-        for v in ngb.values():
+        for v in self.__hg.iter_twin_neighbours():
             yield v
 
     def number_of_edges(self, u=None, v=None):

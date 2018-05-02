@@ -6,6 +6,7 @@ import logging
 import htd_validate_tests.tests.utils.validateGraph_testcase as vtd
 import os
 import htd_validate.utils.hypergraph
+import htd_validate.utils.hypergraph_primalview as hgv
 
 class TestHypergraph(vtd.ValidateGraphTestCase):
     _gr_classname = htd_validate.Hypergraph.__name__
@@ -20,7 +21,20 @@ class TestHypergraph(vtd.ValidateGraphTestCase):
     def testTwins(self):
         hg = self.loadFile(self.filePath("testHG/") + "C13_7.edge")
         print list(hg.iter_twin_vertices())
-        assert False
+        print list(hgv.HypergraphPrimalView(hg).iter_twin_vertices())
+        hg = self.loadFile(self.filePath("testHG/") + "C13_7_2.edge")
+        #[[2, 3], [5, 6, 7]]
+        #[[2, 3], [5, 6, 7, 8], [1, 4]]
+        print list(hg.iter_twin_vertices())
+        print list(hgv.HypergraphPrimalView(hg).iter_twin_vertices())
+        self.assertEqual([[2, 3], [5, 6, 7], [9, 10]], sorted(hg.iter_twin_vertices()))
+        self.assertEqual([[1, 2, 3, 4], [5, 6, 7, 8], [9, 10]], sorted(hgv.HypergraphPrimalView(hg).iter_twin_vertices()))
+
+        hg = self.loadFile(self.filePath("testHG/") + "C13_7_3.edge")
+        self.assertEqual([[2, 3], [5, 6, 7]], sorted(hg.iter_twin_vertices()))
+        self.assertEqual([[1, 4], [2, 3], [5, 6, 7, 8]], sorted(hgv.HypergraphPrimalView(hg).iter_twin_vertices()))
+
+        #assert False
 
     def testAdj(self):
         hg = self.loadFile(self.filePath("testHG/") + "C13_7.edge")

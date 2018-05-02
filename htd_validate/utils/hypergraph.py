@@ -6,7 +6,6 @@
 # Markus A. Hecher, TU Wien, Austria*
 #
 # *) also affiliated with University of Potsdam(R) :P
-# *) is not allowed to contain parts of nuts ;P
 #
 # hypergraph.py is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -120,17 +119,54 @@ class Hypergraph(object):
                     return inters, k
         return None, -1
 
-    def iter_twin_vertices(self):
+    def iter_twin_neighbours(self):
         ngb = {}
+        #TODO: fixme here seems to be something off
         for v in self.nodes_iter():
-            tp = tuple(sorted(tuple(sorted(vi for vi in e if vi != v)) for e in self.incident_edges(v).values()))
-            #print tp
+            tp = tuple(sorted(self.adjByNode(v, strict=False).keys()))
             if tp not in ngb:
                 ngb[tp] = []
             ngb[tp].append(v)
 
         for v in ngb.values():
-            yield v
+            assert(len(v) >= 1)
+            if len(v) >= 2:
+                yield v
+
+
+    def iter_twin_vertices(self):
+        #problem: we need to compare vertices by vertices
+
+        def ngbsOfWrt(u, v):
+            ngbs = []
+            for e in self.incident_edges(u).values():
+                vinside = v in e
+                ngbs.append(tuple(sorted(vi for vi in e if vinside or (not vinside and vi != u))))
+            return tuple(sorted(ngbs))
+
+        for nds in self.iter_twin_neighbours():
+            twins = {}
+            reprs = {}
+            for u in nds:
+                for v in nds:
+                    if u >= v:
+                        continue
+                    elif u in reprs and v in reprs and reprs[u] == reprs[v]:
+                        continue
+                    elif ngbsOfWrt(u, v) == ngbsOfWrt(v, u):
+                        #new representative u for both nodes
+                        if v in reprs:
+                            reprs[u] = reprs[v]
+                            twins[reprs[v]].append(u)
+                        elif u in reprs:
+                            reprs[v] = reprs[u]
+                            twins[reprs[u]].append(v)
+                        else:
+                            reprs[v] = u
+                            reprs[u] = u
+                            twins[u] = [u, v]
+            for v in twins.values():
+                yield v
 
     # --solve-limit=<n>[,<m>] : Stop search after <n> conflicts or <m> restarts
     def largest_clique_asp(self, clingoctl=None, timeout=10, enum=True, usc=True, ground=False, prevent_k_hyperedge=3,
