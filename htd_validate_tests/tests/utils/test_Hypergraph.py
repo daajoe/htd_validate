@@ -36,6 +36,16 @@ class TestHypergraph(vtd.ValidateGraphTestCase):
 
         #assert False
 
+    def testClique_z3(self):
+        hg = self.loadFile(self.filePath("testHG/") + "C13_7.edge")
+        hg.largest_clique()
+        hg = self.loadFile(self.filePath("testHG/") + "s641.hg", fischl_format=True)
+        self.assertIsNotNone(hg)
+        hg.largest_clique(timeout=3)
+        hg = self.loadFile(self.filePath("testHG/") + "imdb-q13a.hg", fischl_format=True)
+        self.assertIsNotNone(hg)
+        hg.largest_clique()
+
     def testAdj(self):
         hg = self.loadFile(self.filePath("testHG/") + "C13_7.edge")
         self.assertIsNotNone(hg)

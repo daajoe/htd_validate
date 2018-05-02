@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright 2018
-# Johannes K. Fichte, Markus Hecher, TU Wien, Austria*
+
 #
-# *) also affiliated with University of Potsdam(R) :P
+
 # *) is not allowed to contain parts of nuts ;P
 #
 # hypergraph.py is free software: you can redistribute it and/or modify

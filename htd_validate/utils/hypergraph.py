@@ -20,6 +20,7 @@
 # from __future__ import print_function
 from __future__ import absolute_import
 
+import time
 import gzip
 from bz2 import BZ2File
 from cStringIO import StringIO
@@ -41,6 +42,11 @@ try:
     import cplex as cx
 except ImportError:
     cx = None
+
+try:
+    import z3
+except ImportError:
+    z3 = None
 
 try:
     import clingo
@@ -167,6 +173,49 @@ class Hypergraph(object):
                             twins[u] = [u, v]
             for v in twins.values():
                 yield v
+
+    def largest_clique(self, timeout=10):
+        if z3 is None:
+            raise ImportError()
+        solver = z3.Optimize()
+        solver.set("timeout", timeout)
+        vars = {}
+        #rev = {}
+        start = time.clock()
+        m = z3.Int(name="cliquesize")
+        for v in self.nodes_iter():
+            vars[v] = z3.Int(name="node{0}".format(v))
+            #rev[vars[v]] = v
+            solver.add(vars[v] <= 1)
+            solver.add(vars[v] >= 0)
+
+        solver.add(z3.Sum([vars[v] for v in self.nodes_iter()]) >= m)
+        solver.add(z3.Or([vars[v] == 1 for v in self.nodes_iter()]))
+        adj = self.adj
+        for u in self.nodes_iter():
+            for v in self.nodes_iter():
+                if u < v and u not in adj[v]:
+                    solver.add(z3.Or(vars[u] == 0, vars[v] == 0))
+            if timeout != 0 and time.clock() - start >= timeout:
+                return None
+        r = None
+        try:
+            #print "solving"
+            r = solver.maximize(m)
+            solver.check()
+        except z3.Z3Exception, e:
+            print e
+            if e.message != "canceled":
+                raise e
+        if r is None:
+            return None
+
+        res = solver.lower(r)
+        assert(str(res) != 'epsilon' and str(res) != 'unsat' and isinstance(res, z3.IntNumRef) and res.as_long() >= 1)
+        cl = [k for (k, v) in vars.iteritems() if solver.model()[v].as_long() == 1]
+        assert(len(cl) == res.as_long())
+        #print cl
+        return cl
 
     # --solve-limit=<n>[,<m>] : Stop search after <n> conflicts or <m> restarts
     def largest_clique_asp(self, clingoctl=None, timeout=10, enum=True, usc=True, ground=False, prevent_k_hyperedge=3,
