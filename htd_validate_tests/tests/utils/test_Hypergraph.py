@@ -38,13 +38,13 @@ class TestHypergraph(vtd.ValidateGraphTestCase):
 
     def testClique_z3(self):
         hg = self.loadFile(self.filePath("testHG/") + "C13_7.edge")
-        hg.largest_clique()
+        self.assertEquals(range(1, 14), sorted(hg.largest_clique(timeout=5)))
         hg = self.loadFile(self.filePath("testHG/") + "s641.hg", fischl_format=True)
         self.assertIsNotNone(hg)
-        hg.largest_clique(timeout=3)
+        self.assertIsNone(None, (hg.largest_clique(timeout=5)))
         hg = self.loadFile(self.filePath("testHG/") + "imdb-q13a.hg", fischl_format=True)
         self.assertIsNotNone(hg)
-        hg.largest_clique()
+        self.assertEquals([9, 11, 13, 23, 24, 25, 26, 27, 28, 29, 30, 31], sorted(hg.largest_clique()))
 
     def testAdj(self):
         hg = self.loadFile(self.filePath("testHG/") + "C13_7.edge")
