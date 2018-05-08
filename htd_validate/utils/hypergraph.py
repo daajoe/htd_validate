@@ -231,7 +231,7 @@ class Hypergraph(object):
         return None
 
 
-    def largest_clique(self, timeout=10):
+    def largest_clique(self, timeout=120):
         if z3 is None:
             raise ImportError()
         solver = z3.Optimize()
@@ -276,7 +276,8 @@ class Hypergraph(object):
             cl = [k for (k, v) in vars.iteritems() if solver.model()[v].as_long() == 1]
             if len(cl) != res.as_long():
                 logging.error("{0} vs. {1}".format(len(cl), res.as_long()))
-            assert(len(cl) == res.as_long())
+                #assert(len(cl) == res.as_long())
+                return None
             #print cl
             return cl
         return None
