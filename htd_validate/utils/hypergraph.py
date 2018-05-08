@@ -210,11 +210,19 @@ class Hypergraph(object):
             return None
 
         res = solver.lower(r)
-        assert(str(res) != 'epsilon' and str(res) != 'unsat' and isinstance(res, z3.IntNumRef) and res.as_long() >= 1)
-        cl = [k for (k, v) in vars.iteritems() if solver.model()[v].as_long() == 1]
-        assert(len(cl) == res.as_long())
-        #print cl
-        return cl
+        #assert(str(res) != 'epsilon' and str(res) != 'unsat' and isinstance(res, z3.IntNumRef) and res.as_long() >= 1)
+        if str(res) == 'epsilon' or str(res) != 'unsat':
+            logging.error(res)
+        elif not isinstance(res, z3.IntNumRef):
+            logging.error("not an int")
+        elif res.as_long() < 1:
+            logging.error("clique result < 1")
+        else:
+            cl = [k for (k, v) in vars.iteritems() if solver.model()[v].as_long() == 1]
+            assert(len(cl) == res.as_long())
+            #print cl
+            return cl
+        return None
 
     # --solve-limit=<n>[,<m>] : Stop search after <n> conflicts or <m> restarts
     def largest_clique_asp(self, clingoctl=None, timeout=10, enum=True, usc=True, ground=False, prevent_k_hyperedge=3,
