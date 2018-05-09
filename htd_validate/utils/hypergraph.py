@@ -175,61 +175,66 @@ class Hypergraph(object):
             for v in twins.values():
                 yield v
 
-    def maximize_fhec(self, timeout=10):
-        if z3 is None:
-            raise ImportError()
-        solver = z3.Optimize()
-        solver.set("timeout", timeout)
-        vars = {}
-        edges = {}
-        #rev = {}
-        start = time.clock()
-        m = z3.Int(name="cliquesize")
-        for v in self.nodes_iter():
-            vars[v] = z3.Int(name="node{0}".format(v))
-            #rev[vars[v]] = v
-            solver.add(vars[v] <= 1)
-            solver.add(vars[v] >= 0)
-
-        for (k, e) in self.__edges.iteritems():
-            edges[k] = z3.Real(name="edge{0}".format(k))
-            solver.add(edges[v] <= 1)
-            solver.add(edges[v] >= 0)
-
-        solver.add(z3.Sum([vars[v] for v in self.nodes_iter()]) >= m)
-        #solver.add(z3.Or([vars[v] == 1 for v in self.nodes_iter()]))
-        adj = self.adj
-        for u in self.nodes_iter():
-            for v in self.nodes_iter():
-                if u < v and u not in adj[v]:
-                    solver.add(z3.Or(vars[u] == 0, vars[v] == 0))
-            if timeout != 0 and time.clock() - start >= timeout:
-                return None
-        r = None
-        try:
-            #print "solving"
-            r = solver.maximize(m)
-            solver.check()
-        except z3.Z3Exception, e:
-            logging.error(e.message)
-        if r is None:
-            return None
-
-        res = solver.lower(r)
-        #assert(str(res) != 'epsilon' and str(res) != 'unsat' and isinstance(res, z3.IntNumRef) and res.as_long() >= 1)
-        if str(res) == 'epsilon' or str(res) != 'unsat':
-            logging.error(res)
-        elif not isinstance(res, z3.IntNumRef):
-            logging.error("not an int")
-        elif res.as_long() < 1:
-            logging.error("clique result < 1")
-        else:
-            cl = [k for (k, v) in vars.iteritems() if solver.model()[v].as_long() == 1]
-            assert(len(cl) == res.as_long())
-            #print cl
-            return cl
-        return None
-
+#    def maximize_fhec(self, timeout=10):
+#        if z3 is None:
+#            raise ImportError()
+#        solver = z3.Optimize()
+#        solver.set("timeout", timeout)
+#        vars = {}
+#        edges = {}
+#        #rev = {}
+#        start = time.clock()
+#        m = z3.Int(name="cliquesize")
+#
+#        for (k, e) in self.__edges.iteritems():
+#            edges[k] = z3.Real(name="edge{0}".format(k))
+#            solver.add(edges[k] <= 1)
+#            solver.add(edges[k] >= 0)
+#
+#        for v in self.nodes_iter():
+#            vars[v] = z3.Int(name="node{0}".format(v))
+#            #rev[vars[v]] = v
+#            solver.add(vars[v] <= 1)
+#            solver.add(vars[v] >= 0)
+#            solver.add(z3.Or(vars[v] == 0, z3.Sum([edges[k] for k in self.incident_edges(v)]) >= 1))
+#
+#        solver.add(z3.Sum([edges[k] for k in self.__edges]) <= n)
+#        solver.add(z3.Sum([vars[v] for v in self.nodes_iter()]) >= m)
+#        #solver.add(z3.Or([vars[v] == 1 for v in self.nodes_iter()]))
+#        adj = self.adj
+#        for u in self.nodes_iter():
+#            for v in self.nodes_iter():
+#                if u < v and u not in adj[v]:
+#                    solver.add(z3.Or(vars[u] == 0, vars[v] == 0))
+#            if timeout != 0 and time.clock() - start >= timeout:
+#                return None
+#        r = None
+#        try:
+#            #print "solving"
+#            r = solver.maximize(m)
+#            solver.check()
+#        except z3.Z3Exception, e:
+#            logging.error(e.message)
+#        if r is None:
+#            return None
+#
+#        res = solver.lower(r)
+#        #assert(str(res) != 'epsilon' and str(res) != 'unsat' and isinstance(res, z3.IntNumRef) and res.as_long() >= 1)
+#        if str(res) == 'epsilon' or str(res) == 'unsat':
+#            logging.error(res)
+#        elif not isinstance(res, z3.IntNumRef):
+#            logging.error("not an int")
+#        elif res.as_long() < 1:
+#            logging.error("clique result < 1")
+#        else:
+#            cl = [k for (k, v) in vars.iteritems() if solver.model()[v].as_long() == 1]
+#            if len(cl) != res.as_long():
+#                logging.error("{0} vs. {1}".format(len(cl), res.as_long()))
+#                #assert(len(cl) == res.as_long())
+#                return None
+#            return cl
+#        return None
+#
 
     def largest_clique(self, timeout=120):
         if z3 is None:

@@ -38,7 +38,7 @@ class TestHypergraph(vtd.ValidateGraphTestCase):
 
     def testClique_z3(self):
         hg = self.loadFile(self.filePath("testHG/") + "C13_7.edge")
-        self.assertEquals(range(1, 14), sorted(hg.largest_clique(timeout=15)))
+        self.assertEquals(range(1, 14), sorted(hg.largest_clique(timeout=20)))
         hg = self.loadFile(self.filePath("testHG/") + "s641.hg", fischl_format=True)
         self.assertIsNotNone(hg)
         self.assertIsNone(None, (hg.largest_clique(timeout=5)))
