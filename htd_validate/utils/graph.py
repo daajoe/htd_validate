@@ -85,7 +85,7 @@ class Graph(nx.Graph):
                 stream = open(filename, 'r')
             elif mtype == 'bzip2':
                 stream = BZ2File(filename, 'r')
-            elif mtype == 'gz':
+            elif mtype == 'gz' or mtype == 'gzip':
                 stream = gzip.open(filename, 'r')
             elif mtype == 'xz' and xz:
                 stream = xz.open(filename, 'r')
@@ -114,7 +114,7 @@ class Graph(nx.Graph):
                         logging.warning("Empty graph.")
                         return graph
                     header_seen = True
-                elif line[0] != 'c':
+                elif line[0] != 'c' and (is_dimacs or (line[0] != 'a' and line[0] != 'e')): #now also ignores forAll and Exists :P
                     if not header_seen:
                         logging.critical('L(%s). Lines before header. Exiting.' % nr)
                         exit(3)
@@ -122,7 +122,7 @@ class Graph(nx.Graph):
                         if is_dimacs:
                             graph.add_edge(int(line[1]), int(line[2]))
                         else:
-                            graph.add_edge(int(line[0]), int(line[1]))
+                            graph.add_edge(abs(int(line[0])), abs(int(line[1])))    #abs -> then it also works for qbf
                     except ValueError, e:
                         logging.critical('L(%s). Invalid integer. Exiting.' % nr)
                         logging.critical('Error was: %s' % e)
