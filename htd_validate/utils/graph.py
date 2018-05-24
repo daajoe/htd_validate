@@ -133,6 +133,7 @@ class Graph(nx.Graph):
                                 for j in atoms:
                                     if i < j:
                                         graph.add_edge(i, j)    #abs -> then it also works for qbf
+                            num_edges += (len(atoms) * (len(atoms) - 1)) / 2 - 1
                         else:
                             graph.add_edge(int(line[0]), int(line[1]))
                         assert(0 not in graph.nodes())
