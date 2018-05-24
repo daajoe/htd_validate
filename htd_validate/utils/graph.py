@@ -110,6 +110,7 @@ class Graph(nx.Graph):
                         logging.critical('L(%s). Too many arguments. Exiting.' % nr)
                         exit(3)
                     is_dimacs = line[1] == 'edge'
+                    is_formula = line[1] == 'cnf'
                     num_verts = int(line[2])
                     num_edges = int(line[3])
                     if header_only:
@@ -125,8 +126,16 @@ class Graph(nx.Graph):
                     try:
                         if is_dimacs:
                             graph.add_edge(int(line[1]), int(line[2]))
+                        elif is_formula:
+                            atoms = map(lambda x: abs(int(x)), line[0:-1])
+                            #print("formula{0}".format(atoms))
+                            for i in atoms:
+                                for j in atoms:
+                                    if i < j:
+                                        graph.add_edge(i, j)    #abs -> then it also works for qbf
                         else:
-                            graph.add_edge(abs(int(line[0])), abs(int(line[1])))    #abs -> then it also works for qbf
+                            graph.add_edge(int(line[0]), int(line[1]))
+                        assert(0 not in graph.nodes())
                     except ValueError, e:
                         logging.critical('L(%s). Invalid integer. Exiting.' % nr)
                         logging.critical('Error was: %s' % e)
@@ -149,7 +158,8 @@ class Graph(nx.Graph):
             exit(3)
         if graph.number_of_nodes() > num_verts:
             logging.error("Vertices overmuch: read=%s expected=%s" % (graph.number_of_nodes(), num_verts))
-            #exit(3)
+            #print(graph.nodes())
+            exit(3)
         if strict and graph.number_of_nodes() < num_verts:
             logging.error("Vertices missing: read=%s expected=%s" % (graph.number_of_nodes(), num_verts))
             exit(3)
