@@ -236,6 +236,15 @@ class Hypergraph(object):
 #        return None
 #
 
+    def largest_hyperedge(self):
+        maxe = None
+        maxc = 0
+        for e in self.__edges.values():
+            if len(e) > maxc:
+                maxc = len(e)
+                maxe = e
+        return maxe
+
     def largest_clique(self, timeout=120):
         if z3 is None:
             raise ImportError()
