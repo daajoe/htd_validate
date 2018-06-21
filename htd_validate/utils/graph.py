@@ -66,7 +66,7 @@ class Graph(nx.Graph):
         return Graph._from_file(filename, header_only=True, strict=strict)
 
     @classmethod
-    def _unused_file_line(cls, graph, line):
+    def _parsed_file_line(cls, graph, line):
         pass
 
     @classmethod
@@ -145,8 +145,7 @@ class Graph(nx.Graph):
                         logging.critical('L(%s). Incomplete edge. Exiting' % nr)
                         logging.critical('Error was: %s' % e)
                         exit(3)
-                else:
-                    clazz._unused_file_line(graph, line)
+                clazz._parsed_file_line(graph, line)
         finally:
             if stream:
                 stream.close()
