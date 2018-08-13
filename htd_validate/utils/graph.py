@@ -43,7 +43,7 @@ def complete_graph(vertices):
 
 class Graph(nx.Graph):
     def __init__(self, data=None, val=None, **attr):
-        super(Graph, self).__init__()
+        super(Graph, self).__init__(data=data)
         self.val = val
 
     @classmethod
