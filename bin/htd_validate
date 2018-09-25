@@ -63,7 +63,7 @@ def is_valid_file(parser, arg):
 
 # TODO: implement read header to guess decomposition type and remove it from the commandline arguments
 available_validators = [
-    htd_validate.validators.AutoDecompositionValidator,
+    # htd_validate.validators.AutoDecompositionValidator,
     htd_validate.validators.TreeDecompositionValidator,
     htd_validate.validators.GeneralizedHypertreeDecompositionValidator,
     htd_validate.validators.HypertreeDecompositionValidator,
@@ -78,7 +78,8 @@ def parse_args():
     parser.add_argument('-t', '--type', dest='validator', action='store', type=str, help='Type of the Decomposition',
                         choices=d_short_names.keys(),
                         default=htd_validate.validators.TreeDecompositionValidator.short_name())
-
+    parser.add_argument('-ff', '--fischl-format', dest='fischl_format', action='store_true', default=False,
+                        help='Use the famous Fischl format.')
     required = parser.add_argument_group('required arguments')
     required.add_argument('-g', '--hypergraph', dest='graph_filename', action='store', required=True,
                           type=lambda x: is_valid_file(parser, x),
@@ -94,8 +95,9 @@ def main():
     validator_class_name = args.validator
     graph_filename = args.graph_filename
     decomposition_filename = args.decomposition_filename
+    fischl_format = args.fischl_format
     Validator = d_short_names[validator_class_name]()
-    HG = getattr(htd_validate.utils, Validator.graph_type()).from_file(graph_filename)
+    HG = getattr(htd_validate.utils, Validator.graph_type()).from_file(graph_filename, fischl_format=fischl_format)
     Decomp = getattr(htd_validate.decompositions, Validator.decomposition_type()).from_file(decomposition_filename)
     ret = Decomp.validate(HG)
     exit(not ret)

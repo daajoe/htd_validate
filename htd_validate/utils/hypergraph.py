@@ -671,6 +671,8 @@ class Hypergraph(object):
             line = line.replace('\n', '')[:-1]
             edge_name = None
             edge_vertices = []
+            #replace whitespaces
+            line = line.replace(' ','')
 
             collect = []
             for char in line:
