@@ -10,6 +10,7 @@ import networkx as nx
 from htd_validate.utils import HypergraphPrimalView
 from networkx.drawing.nx_agraph import graphviz_layout
 
+#TODO: interpret w b v 0 by default for missing mappings
 
 class Decomposition(object):
     _problem_string = 'missing'
@@ -222,6 +223,7 @@ class Decomposition(object):
                             log_critical('Too many or too few arguments in header.')
                             exit(2)
                         header_seen = True
+                        continue
                     elif line[0] == 'b':
                         if not header_seen:
                             log_critical('Bag before header.')

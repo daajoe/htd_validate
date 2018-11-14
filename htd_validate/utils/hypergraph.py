@@ -1,11 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright 2017
-# Johannes K. Fichte, TU Wien, Austria*
-# Markus A. Hecher, TU Wien, Austria*
-#
-# *) also affiliated with University of Potsdam(R) :P
+# Copyright 2017, 2018
+# Johannes K. Fichte, TU Wien, Austria; TU Dresden, Germany; also: Uni Potsdam, Germany
+# Markus A. Hecher, TU Wien, Austria; also: Uni Potsdam, Germany
 #
 # hypergraph.py is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,9 +18,9 @@
 # from __future__ import print_function
 from __future__ import absolute_import
 
+import gzip
 import logging
 import time
-import gzip
 from bz2 import BZ2File
 from cStringIO import StringIO
 from itertools import imap, izip
@@ -54,7 +52,6 @@ try:
 except:
     clingo = None
 
-from pymonad.Reader import curry
 
 from UserString import MutableString
 import threading
@@ -94,7 +91,6 @@ class SymTab:
 
 class Hypergraph(object):
     __d = {}
-    # __edge_type = type(tuple)
     __edge_type = tuple
 
     ACCURACY = 0.0000001
@@ -108,9 +104,6 @@ class Hypergraph(object):
         if self.__non_numerical:
             self.__nsymtab = SymTab()
             self.__elabel = {}
-
-    # def edge_rank(self, n):
-    #    return map(lambda x: tuple(x, len(x)), self.adjByNode(n))
 
     def edge_into(self, vertices, globalgraph):
         vertices = set(vertices)
@@ -128,7 +121,7 @@ class Hypergraph(object):
 
     def iter_twin_neighbours(self):
         ngb = {}
-        #TODO: fixme here seems to be something off
+        # TODO: fixme here seems to be something off
         for v in self.nodes_iter():
             tp = tuple(sorted(self.adjByNode(v, strict=False).keys()))
             if tp not in ngb:
@@ -136,13 +129,12 @@ class Hypergraph(object):
             ngb[tp].append(v)
 
         for v in ngb.values():
-            assert(len(v) >= 1)
+            assert (len(v) >= 1)
             if len(v) >= 2:
                 yield v
 
-
     def iter_twin_vertices(self):
-        #problem: we need to compare vertices by vertices
+        # problem: we need to compare vertices by vertices
 
         def ngbsOfWrt(u, v):
             ngbs = []
@@ -161,7 +153,7 @@ class Hypergraph(object):
                     elif u in reprs and v in reprs and reprs[u] == reprs[v]:
                         continue
                     elif ngbsOfWrt(u, v) == ngbsOfWrt(v, u):
-                        #new representative u for both nodes
+                        # new representative u for both nodes
                         if v in reprs:
                             reprs[u] = reprs[v]
                             twins[reprs[v]].append(u)
@@ -175,67 +167,6 @@ class Hypergraph(object):
             for v in twins.values():
                 yield v
 
-#    def maximize_fhec(self, timeout=10):
-#        if z3 is None:
-#            raise ImportError()
-#        solver = z3.Optimize()
-#        solver.set("timeout", timeout)
-#        vars = {}
-#        edges = {}
-#        #rev = {}
-#        start = time.clock()
-#        m = z3.Int(name="cliquesize")
-#
-#        for (k, e) in self.__edges.iteritems():
-#            edges[k] = z3.Real(name="edge{0}".format(k))
-#            solver.add(edges[k] <= 1)
-#            solver.add(edges[k] >= 0)
-#
-#        for v in self.nodes_iter():
-#            vars[v] = z3.Int(name="node{0}".format(v))
-#            #rev[vars[v]] = v
-#            solver.add(vars[v] <= 1)
-#            solver.add(vars[v] >= 0)
-#            solver.add(z3.Or(vars[v] == 0, z3.Sum([edges[k] for k in self.incident_edges(v)]) >= 1))
-#
-#        solver.add(z3.Sum([edges[k] for k in self.__edges]) <= n)
-#        solver.add(z3.Sum([vars[v] for v in self.nodes_iter()]) >= m)
-#        #solver.add(z3.Or([vars[v] == 1 for v in self.nodes_iter()]))
-#        adj = self.adj
-#        for u in self.nodes_iter():
-#            for v in self.nodes_iter():
-#                if u < v and u not in adj[v]:
-#                    solver.add(z3.Or(vars[u] == 0, vars[v] == 0))
-#            if timeout != 0 and time.clock() - start >= timeout:
-#                return None
-#        r = None
-#        try:
-#            #print "solving"
-#            r = solver.maximize(m)
-#            solver.check()
-#        except z3.Z3Exception, e:
-#            logging.error(e.message)
-#        if r is None:
-#            return None
-#
-#        res = solver.lower(r)
-#        #assert(str(res) != 'epsilon' and str(res) != 'unsat' and isinstance(res, z3.IntNumRef) and res.as_long() >= 1)
-#        if str(res) == 'epsilon' or str(res) == 'unsat':
-#            logging.error(res)
-#        elif not isinstance(res, z3.IntNumRef):
-#            logging.error("not an int")
-#        elif res.as_long() < 1:
-#            logging.error("clique result < 1")
-#        else:
-#            cl = [k for (k, v) in vars.iteritems() if solver.model()[v].as_long() == 1]
-#            if len(cl) != res.as_long():
-#                logging.error("{0} vs. {1}".format(len(cl), res.as_long()))
-#                #assert(len(cl) == res.as_long())
-#                return None
-#            return cl
-#        return None
-#
-
     def largest_hyperedge(self):
         maxe = None
         maxc = 0
@@ -247,7 +178,7 @@ class Hypergraph(object):
 
     def largest_clique(self, timeout=120):
         if z3 is None:
-            raise ImportError()
+            raise ImportError("This function requires that the SMT solver z3 and the python API was installed.")
         solver = z3.Optimize()
         solver.set("timeout", timeout)
         vars = {}
@@ -300,7 +231,9 @@ class Hypergraph(object):
     def largest_clique_asp(self, clingoctl=None, timeout=10, enum=True, usc=True, ground=False, prevent_k_hyperedge=3,
                            solve_limit="umax,umax"):
         if clingo is None:
-            raise ImportError()
+            raise ImportError("This function requires that the SMT solver z3 and the python API was installed.")
+
+        from pymonad.Reader import curry
 
         @curry
         def __on_model(aset, model):
@@ -463,8 +396,7 @@ class Hypergraph(object):
 
         problem.linear_constraints.add(lin_expr=constraints,
                                        senses=["G"] * len(constraints),
-                                       rhs=[1] * len(constraints))  # ,
-        # names=["c{0}".format(x) for x in names])
+                                       rhs=[1] * len(constraints))
         if opt >= 0:
             problem.linear_constraints.add(lin_expr=[[names, [1] * len(names)]],
                                            senses=["E"], rhs=[opt])
@@ -484,11 +416,7 @@ class Hypergraph(object):
                 pos += 1
 
         return problem.solution.get_objective_value()
-        # print problem.solution.get_values()
 
-    # @staticmethod
-    # def project_edge(e, p):
-    #    return [x for x in e if x not in p]
 
     def induce_edges(self, es):
         for k, e in es.iteritems():
@@ -527,19 +455,7 @@ class Hypergraph(object):
         return edges
 
     def edge_rank(self, n):
-        # print self.incident_edges(n).values()
         return map(lambda x: (x, len(x)), self.incident_edges(n).values())
-
-    # @staticmethod
-    # def project_edge(e, p):
-    #    return [x for x in e if x not in p]
-
-    # def inc(self,v):
-    #    nbh = dict()
-    #    for e in self.__edges.values():
-    #        if v in e:
-    #            nbh[e] = Hypergraph.__d
-    #    return nbh
 
     def adjByNode(self, v, strict=True):
         nbh = dict()
@@ -561,16 +477,12 @@ class Hypergraph(object):
         # please do not make me copy everything :(
         # assert(Hypergraph.__edge_type == type(list))
         self.__vertices.remove(v)
-        # del self.__vertices[v]
         dl = []
         for k, e in self.__edges.iteritems():
             if v in self.__edges[k]:
-                # thank you, tuple!
-                # del self.__edges[k][v]
                 e = set(e)
                 e.remove(v)
                 self.__edges[k] = Hypergraph.__edge_type(e)
-                # print self.__edges[k]
                 dl.append((k, e))
         for k, e in dl:
             if len(e) <= 1 or self.isSubsumed(e, modulo=k):
@@ -671,8 +583,8 @@ class Hypergraph(object):
             line = line.replace('\n', '')[:-1]
             edge_name = None
             edge_vertices = []
-            #replace whitespaces
-            line = line.replace(' ','')
+            # replace whitespaces
+            line = line.replace(' ', '')
 
             collect = []
             for char in line:
@@ -752,12 +664,10 @@ class Hypergraph(object):
         return v
 
     def add_hyperedge(self, X, name=None, edge_id=None):
-        # print name
         if len(X) <= 1:
             return
         if self.__non_numerical:
             X = map(self.__nsymtab.get, X)
-        # print X
         if edge_id is None:
             edge_id = len(self.__edges) + 1
 
@@ -768,8 +678,6 @@ class Hypergraph(object):
         if not self.isSubsumed(set(X), checkSubsumes=True):
             self.__edges[edge_id] = Hypergraph.__edge_type(X)
             self.__vertices.update(X)
-        # else:
-        #    print("subsumed: ", X)
         return X
 
     def isSubsumed(self, sx, checkSubsumes=False, modulo=-1):

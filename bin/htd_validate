@@ -43,7 +43,7 @@ def get_git_revision_short_hash():
     return subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD'])[:-1]
 
 
-__version__ = '1.0.1-dev (hash: %s)' % get_git_revision_short_hash()
+__version__ = '1.0.3-dev (hash: %s)' % get_git_revision_short_hash()
 
 
 def setup_logging(config_file='%s/logging.conf' % (os.path.dirname(__file__))):
@@ -91,6 +91,8 @@ def parse_args():
 
 
 def main():
+    logging.error("Note that for now the validator does not support the compressed htd format (i.e., implicit assumptions on missing weights)")
+
     args = parse_args()
     validator_class_name = args.validator
     graph_filename = args.graph_filename

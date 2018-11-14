@@ -1,6 +1,3 @@
 networkx==1.11
 backports.lzma
-PyMonad
-cplex
-clingo
 deprecation
