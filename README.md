@@ -22,12 +22,10 @@ pip install -r requirements.txt
 bin/htd_validate --help
 ```
 
-## Validate Decompositions
+## Validate Hypertree Decompositions
 ```bash
-bin/htd_validate -g hypergraphfile.gr -d hyperdecomposition.htd
+bin/htd_validate -g hypergraphfile.gr -d hyperdecomposition.htd -t htd
 ```
-
-
 
 
 ## Input Formats
