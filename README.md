@@ -24,3 +24,11 @@ bin/htd_validate --help
 ```bash
 bin/htd_validate -g hypergraphfile.gr -d hyperdecomposition.htd
 ```
+
+
+
+
+## Input Formats
+
+### Hypertrees and Hypertree Decompositions
+See [FORMAT_HTD.md](FORMAT_HTD.md)
