@@ -98,12 +98,6 @@ class GeneralizedHypertreeDecomposition(Decomposition):
                 'Too many mappings. Found %s expected %s \n' % (
                     len(decomp.hyperedge_function), header['num_bags']))
             exit(2)
-        for b in decomp.bags.iterkeys():
-            for e in xrange(1, header['num_hyperedges'] + 1):
-                if not decomp.hyperedge_function[b].has_key(e):
-                    logging.error(
-                        'Missing function mapping for node %s of the tree. Missing for edge %s \n' % (b, e))
-                    exit(2)
         if header['max_function_value'] != decomp.width():
             logging.error(
                 'Given width is wrong. Computed width %s, given width %s \n' % (
