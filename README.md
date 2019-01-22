@@ -24,3 +24,9 @@ bin/htd_validate --help
 ```bash
 bin/htd_validate -g hypergraphfile.gr -d hyperdecomposition.htd
 ```
+
+## Compile with PyInstaller
+```bash
+pyinstaller -p $PWD --clean --onefile bin/htd_validate
+```
+Executable will be in `dist`
