@@ -40,15 +40,20 @@ __license__ = 'GPL'
 
 
 def get_git_revision_short_hash():
-    return subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD'])[:-1]
+    return subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD'], stderr=subprocess.STDOUT)[:-1]
 
+__version__ = None
 
-__version__ = '1.0.1-dev (hash: %s)' % get_git_revision_short_hash()
-
+try:
+    __version__ = '1.0.1-dev (hash: %s)' % get_git_revision_short_hash()
+except:
+    __version__ = '1.0.1-dev'
 
 def setup_logging(config_file='%s/logging.conf' % (os.path.dirname(__file__))):
-    logging.config.fileConfig(config_file)
-
+    try:
+        logging.config.fileConfig(config_file)
+    except:
+        logging.warning("Unable to find the config for logging")
 
 setup_logging(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'logging.conf'))
 
@@ -100,7 +105,7 @@ def main():
     HG = getattr(htd_validate.utils, Validator.graph_type()).from_file(graph_filename, fischl_format=fischl_format)
     Decomp = getattr(htd_validate.decompositions, Validator.decomposition_type()).from_file(decomposition_filename)
     ret = Decomp.validate(HG)
-    exit(not ret)
+    sys.exit(not ret)
 
 
 if __name__ == "__main__":

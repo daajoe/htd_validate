@@ -19,6 +19,7 @@ from __future__ import print_function
 
 import gzip
 import logging
+import sys
 
 from bz2 import BZ2File
 from cStringIO import StringIO
@@ -105,10 +106,10 @@ class Graph(nx.Graph):
                 elif line[0] == 'p':
                     if header_seen:
                         logging.critical('L(%s). Duplicate header. Exiting.' % nr)
-                        exit(3)
+                        sys.exit(3)
                     if len(line) > 4:
                         logging.critical('L(%s). Too many arguments. Exiting.' % nr)
-                        exit(3)
+                        sys.exit(3)
                     is_dimacs = line[1] == 'edge'
                     is_formula = line[1] == 'cnf'
                     num_verts = int(line[2])
@@ -122,7 +123,7 @@ class Graph(nx.Graph):
                 elif line[0] != 'c' and (is_dimacs or (line[0] != 'a' and line[0] != 'e')): #now also ignores forAll and Exists :P
                     if not header_seen:
                         logging.critical('L(%s). Lines before header. Exiting.' % nr)
-                        exit(3)
+                        sys.exit(3)
                     try:
                         if is_dimacs:
                             graph.add_edge(int(line[1]), int(line[2]))
@@ -140,11 +141,11 @@ class Graph(nx.Graph):
                     except ValueError, e:
                         logging.critical('L(%s). Invalid integer. Exiting.' % nr)
                         logging.critical('Error was: %s' % e)
-                        exit(3)
+                        sys.exit(3)
                     except IndexError, e:
                         logging.critical('L(%s). Incomplete edge. Exiting' % nr)
                         logging.critical('Error was: %s' % e)
-                        exit(3)
+                        sys.exit(3)
                 clazz._parsed_file_line(graph, line)
         finally:
             if stream:
@@ -152,17 +153,17 @@ class Graph(nx.Graph):
 
         if graph.number_of_edges() > num_edges:
             logging.error("Edges overmuch: read=%s expected=%s" % (graph.number_of_edges(), num_edges))
-            exit(3)
+            sys.exit(3)
         if strict and graph.number_of_edges() < num_edges:
             logging.error("Edges missing: read=%s expected=%s" % (graph.number_of_edges(), num_edges))
-            exit(3)
+            sys.exit(3)
         if graph.number_of_nodes() > num_verts:
             logging.error("Vertices overmuch: read=%s expected=%s" % (graph.number_of_nodes(), num_verts))
             #print(graph.nodes())
-            exit(3)
+            sys.exit(3)
         if strict and graph.number_of_nodes() < num_verts:
             logging.error("Vertices missing: read=%s expected=%s" % (graph.number_of_nodes(), num_verts))
-            exit(3)
+            sys.exit(3)
         return graph
 
     def write_dimacs(self, stream, copy=True):

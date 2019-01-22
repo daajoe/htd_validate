@@ -1,5 +1,6 @@
 import logging
 import os
+import sys
 import traceback
 from cStringIO import StringIO
 from collections import defaultdict
@@ -212,7 +213,7 @@ class Decomposition(object):
                     elif line[0] == 's' and line[1] == cls._problem_string:
                         if header_seen:
                             log_critical('Duplicate header.')
-                            exit(2)
+                            sys.exit(2)
                         try:
                             header['num_bags'] = int(line[2])
                             header['num_vertices'] = int(line[4])
@@ -220,25 +221,25 @@ class Decomposition(object):
                         except ValueError as e:
                             logging.error(e)
                             log_critical('Too many or too few arguments in header.')
-                            exit(2)
+                            sys.exit(2)
                         header_seen = True
                     elif line[0] == 'b':
                         if not header_seen:
                             log_critical('Bag before header.')
-                            exit(2)
+                            sys.exit(2)
                         if strict and edge_seen:
                             log_critical('Edge before bag.')
-                            exit(2)
+                            sys.exit(2)
                         if len(line) < 2:
                             log_critical('Some bag has no index.')
-                            exit(1)
+                            sys.exit(1)
                         if strict and len(line) < 3:
                             log_critical('Empty bag.')
-                            exit(2)
+                            sys.exit(2)
                         bag_name = int(line[1])
                         if decomp.bags.has_key(bag_name):
                             log_critical('Duplicate bag.')
-                            exit(2)
+                            sys.exit(2)
                         # TODO: implement type checking for htd|fhtd
                         # TODO: BUT NOT HERE! type checking required in 'w' line ~> _reader
                         try:
@@ -246,7 +247,7 @@ class Decomposition(object):
                         except ValueError as e:
                             log_critical("Type checking failed (expected %s)." % int)  # cls._data_type)
                             logging.critical("Full exception %s." % e)
-                            exit(2)
+                            sys.exit(2)
                         decomp.tree.add_node(bag_name)
                     else:
                         if cls._reader(decomp, line):
@@ -254,22 +255,22 @@ class Decomposition(object):
                         else:
                             if strict and not header_seen:
                                 log_critical('Edge before header.')
-                                exit(2)
+                                sys.exit(2)
                             u, v = map(int, line)
                             if u > header['num_bags']:
                                 log_critical("Edge label %s out of bounds (expected max %s bags)." % (u, num_bags))
-                                exit(2)
+                                sys.exit(2)
                             if v > header['num_bags']:
                                 log_critical("Edge label %s out of bounds (expected max %s bags)." % (v, num_bags))
-                                exit(2)
+                                sys.exit(2)
                             if u not in decomp.bags.keys():
                                 log_critical(
                                     "Edge in the tree (%s,%s) without a corresponding bag for node %s." % (u, v, u))
-                                exit(2)
+                                sys.exit(2)
                             if v not in decomp.bags.keys():
                                 log_critical(
                                     "Edge in the tree (%s,%s) without a corresponding bag for node %s." % (u, v, v))
-                                exit(2)
+                                sys.exit(2)
                             decomp.tree.add_edge(u, v)
                             edge_seen = True
             except ValueError as e:
@@ -282,29 +283,29 @@ class Decomposition(object):
                 for line in traceback.format_exc().split('\n'):
                     logging.critical(line)
                 logging.critical('Exiting...')
-                exit(143)
+                sys.exit(143)
             # decomps of single bags require special treatment
             if not header_seen:
                 logging.critical('Missing header. Exiting...')
-                exit(2)
+                sys.exit(2)
             if len(decomp) == 1:
                 # noinspection PyUnresolvedReferences
                 decomp.tree.add_node(decomp.bags.iterkeys().next())
             if decomp.specific_valiation(decomp, header):
                 logging.critical('Decomposition specific validation failed.')
-                exit(2)
+                sys.exit(2)
             if len(decomp) != header['num_bags']:
                 logging.critical('Number of bags differ. Was %s expected %s.\n' % (len(decomp), header['num_bags']))
-                exit(2)
+                sys.exit(2)
             if decomp.num_vertices > header['num_vertices']:
                 logging.critical(
                     'Number of vertices differ (>). Was %s expected %s.\n' % (
                         decomp.num_vertices, header['num_vertices']))
-                exit(2)
+                sys.exit(2)
             if decomp.num_vertices < header['num_vertices'] and strict:
                 logging.warning(
                     'Number of vertices differ (<). Was %s expected %s.\n' % (decomp.num_vertices, num_vertices))
-                exit(2)
+                sys.exit(2)
         return decomp
 
     def edges_covered(self):

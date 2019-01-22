@@ -4,3 +4,4 @@ PyMonad
 cplex
 clingo
 deprecation
+PyInstaller==3.4

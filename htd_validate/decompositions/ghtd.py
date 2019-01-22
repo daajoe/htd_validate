@@ -73,7 +73,7 @@ class GeneralizedHypertreeDecomposition(Decomposition):
     def _read_header(cls, line):
         if len(line) < 6:
             logging.critical('Header contained too little parameters. Exiting...')
-            exit(2)
+            sys.exit(2)
 
         ret = {'max_function_value': cls._data_type(line[3]),
                'num_vertices': int(line[4]),
@@ -81,7 +81,7 @@ class GeneralizedHypertreeDecomposition(Decomposition):
 
         if len(line) > 6:
             logging.critical('Header contained too many parameters. Exiting...')
-            exit(2)
+            sys.exit(2)
         return ret
 
     @classmethod
@@ -97,12 +97,12 @@ class GeneralizedHypertreeDecomposition(Decomposition):
             logging.error(
                 'Too many mappings. Found %s expected %s \n' % (
                     len(decomp.hyperedge_function), header['num_bags']))
-            exit(2)
+            sys.exit(2)
         if header['max_function_value'] != decomp.width():
             logging.error(
                 'Given width is wrong. Computed width %s, given width %s \n' % (
                     decomp.width(), header['max_function_value']))
-            exit(2)
+            sys.exit(2)
 
     # TODO: detect format from file header
     # TODO: syntax check for htd|ghtd|fhtd

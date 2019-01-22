@@ -1,3 +1,4 @@
+import sys
 import logging
 from cStringIO import StringIO
 from itertools import count, imap, izip
@@ -34,7 +35,7 @@ class TreeDecomposition(Decomposition):
         ret = {'max_bag_size': int(line[3])}
         if len(line) > 5:
             logging.critical('Header contained too many parameters. Exiting...')
-            exit(2)
+            sys.exit(2)
         return ret
 
     @staticmethod
@@ -47,7 +48,7 @@ class TreeDecomposition(Decomposition):
             logging.critical(
                 'Bag Size does not match the header was %s expected %s.\n' % (
                     td.max_bag_size(), problem_statement['max_bag_size']))
-            exit(2)
+            sys.exit(2)
 
     # TODO: move the validation parts to the validators???
     def vertices_covered(self):
