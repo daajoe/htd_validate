@@ -424,7 +424,7 @@ class Solution {
     bool isAllVertexExist() {
       vector<vector<int>> vertexContaining = getContainingVertex();
 
-      for (int i = 1 ; i <= numBags ; i++) {
+      for (int i = 1 ; i <= numVertex ; i++) {
         if (vertexContaining[i].empty()) {
           return false;
         }
@@ -659,7 +659,7 @@ int main(int argc, char **argv) {
   if (argc >= 5) {
     sscanf(argv[4], "%lf", &userTime);
     // since OPTIL give use 100 * time in seconds..
-    userTime /= 100.0;
+    // userTime /= 100.0;
 
     // if (userTime > TIMEOUT_TIME) {
     //   giveVerdict(-TIMEOUT_TIME * 2, "Time Limit Exceeded");
