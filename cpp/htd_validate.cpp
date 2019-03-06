@@ -155,13 +155,14 @@ class Tree {
         }
       }
 
-      int root = 1; // maybe wrong, but will be catched in the validation
-      for (int i = 2 ; i <= numVertex ; i++) {
+      int root = -1; // maybe wrong, but will be catched in the validation
+      for (int i = 1 ; i <= numVertex ; i++) {
         if (!hasParent[i]) {
           root = i;
         }
       }
 
+      checkSolutionConstraint(root != -1, "Invalid Tree");
       parent[root] = root;
 
       dfsMakeRooted(root);
@@ -676,7 +677,6 @@ int main(int argc, char **argv) {
 
   problemInstance.readFromStream(instanceInputStream);
   userSolution.readFromStream(userOutputStream, true);
-  
   if (argc >= 4) {
     ifstream instanceOutputStream(argv[3]);
     judgeSolution.readFromStream(instanceOutputStream, false);
