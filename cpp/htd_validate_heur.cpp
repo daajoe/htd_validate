@@ -12,6 +12,8 @@ using namespace std;
 //////////// HELPER //////////////////
 
 const int TIMEOUT_TIME = 1800;
+const int MULTIPLIER = 50;
+const int SCORE_ADD_CONSTANT = MULTIPLIER * 1000;
 
 const int INSTANCE_READ_MODE = 1;
 const int SOLUTION_READ_MODE = 2;
@@ -33,9 +35,9 @@ void giveVerdict(double score, string msg) {
 void checkSolutionConstraint(bool validConstraint, string failMsg) {
   if (DO_CHECK_CONSTRAINT && !validConstraint) {
     #ifdef VERBOSE
-      giveVerdict(-TIMEOUT_TIME * 10, failMsg);
+      giveVerdict(TIMEOUT_TIME * 1000, failMsg);
     #else
-      giveVerdict(-TIMEOUT_TIME * 10, "Wrong Answer");
+      giveVerdict(TIMEOUT_TIME * 1000, "Wrong Answer");
     #endif
   }
 }
@@ -691,7 +693,9 @@ int main(int argc, char **argv) {
   DO_CHECK_CONSTRAINT = true;
   checkSolutionConstraint(valid, "Reported hypertree decomposition is not optimal");
 
-  giveVerdict(userTime, "SUCCESS");
+  double score = userTime + MULTIPLIER * (userSolution.getWidth() - judgeSolution.getWidth());
+  score += SCORE_ADD_CONSTANT;
 
+  giveVerdict(score, "SUCCESS");
   return 0;
 }
