@@ -686,12 +686,8 @@ int main(int argc, char **argv) {
 
   int valid = problemInstance.validate(userSolution);
 
-  if (argc >= 4) {
-    valid &= (userSolution.getWidth() <= judgeSolution.getWidth());
-  }
-
   DO_CHECK_CONSTRAINT = true;
-  checkSolutionConstraint(valid, "Reported hypertree decomposition is not optimal");
+  checkSolutionConstraint(valid, "Reported hypertree decomposition is incorrect");
 
   double score = userTime + MULTIPLIER * (userSolution.getWidth() - judgeSolution.getWidth());
   score += SCORE_ADD_CONSTANT;
