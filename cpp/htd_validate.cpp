@@ -662,9 +662,9 @@ int main(int argc, char **argv) {
     // since OPTIL give use 100 * time in seconds..
     // userTime /= 100.0;
 
-    // if (userTime > TIMEOUT_TIME) {
-    //   giveVerdict(-TIMEOUT_TIME * 2, "Time Limit Exceeded");
-    // }
+    if (userTime > TIMEOUT_TIME) {
+      giveVerdict(-TIMEOUT_TIME * 2, "Time Limit Exceeded");
+    }
   }
 
   ifstream instanceInputStream(argv[1]);
