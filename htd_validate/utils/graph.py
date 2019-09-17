@@ -21,15 +21,8 @@ import gzip
 import logging
 
 from bz2 import BZ2File
-from cStringIO import StringIO
-from itertools import count, izip
-
-try:
-    import backports.lzma as xz
-
-    xz = True
-except ImportError:
-    xz = False
+from io import StringIO
+from itertools import count
 
 import mimetypes
 import networkx as nx
@@ -137,11 +130,11 @@ class Graph(nx.Graph):
                         else:
                             graph.add_edge(int(line[0]), int(line[1]))
                         assert(0 not in graph.nodes())
-                    except ValueError, e:
+                    except ValueError as e:
                         logging.critical('L(%s). Invalid integer. Exiting.' % nr)
                         logging.critical('Error was: %s' % e)
                         exit(3)
-                    except IndexError, e:
+                    except IndexError as e:
                         logging.critical('L(%s). Incomplete edge. Exiting' % nr)
                         logging.critical('Error was: %s' % e)
                         exit(3)

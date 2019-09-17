@@ -1,7 +1,7 @@
 import logging
 import os
 import traceback
-from cStringIO import StringIO
+from io import StringIO
 from collections import defaultdict
 from itertools import chain
 

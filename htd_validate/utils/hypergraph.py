@@ -24,18 +24,9 @@ import logging
 import time
 import gzip
 from bz2 import BZ2File
-from cStringIO import StringIO
-from itertools import imap, izip
+from io import StringIO
 
 from htd_validate.utils import relabelling as relab
-
-try:
-    import backports.lzma as xz
-
-    xz = True
-except ImportError:
-    xz = False
-
 import copy
 import mimetypes
 
@@ -54,9 +45,8 @@ try:
 except:
     clingo = None
 
-from pymonad.Reader import curry
+# from pymonad.Reader import curry
 
-from UserString import MutableString
 import threading
 from htd_validate.utils.integer import safe_int
 
@@ -273,7 +263,7 @@ class Hypergraph(object):
         try:
             r = solver.maximize(m)
             solver.check()
-        except z3.Z3Exception, e:
+        except z3.Z3Exception as e:
             logging.error(e.message)
         if r is None:
             return None
@@ -296,132 +286,134 @@ class Hypergraph(object):
             return cl
         return None
 
+
+    #TODO: fixme
     # --solve-limit=<n>[,<m>] : Stop search after <n> conflicts or <m> restarts
-    def largest_clique_asp(self, clingoctl=None, timeout=10, enum=True, usc=True, ground=False, prevent_k_hyperedge=3,
-                           solve_limit="umax,umax"):
-        if clingo is None:
-            raise ImportError()
-
-        @curry
-        def __on_model(aset, model):
-            if len(model.cost) == 0:
-                return
-            # print model, model.cost, model.optimality_proven
-            aset[1] |= model.optimality_proven
-            opt = abs(model.cost[0])
-            if opt >= aset[0]:
-                if opt > aset[0]:
-                    aset[2] = []
-                aset[0] = opt
-                answer_set = [safe_int(x) for x in str(model).translate(None, "u()").split(" ")]
-                # might get "fake" duplicates :(, with different model.optimality_proven
-                if answer_set not in aset[2][-1:]:
-                    aset[2].append(answer_set)
-
-        prog = MutableString()
-
-        if clingoctl is None:
-            c = clingo.Control()
-
-            if usc:
-                c.configuration.solver.opt_strategy = "usc,pmres,disjoint,stratify"
-                c.configuration.solver.opt_usc_shrink = "min"
-            c.configuration.solve.opt_mode = "optN" if enum else "opt"
-            c.configuration.solve.models = 0
-            c.configuration.solve.solve_limit = solve_limit
-
-            guess = MutableString()
-            pos = 0
-            if len(self.__vertices) > 0:
-                guess += "{"
-                prog += "#maximize {"
-                for u in self.__vertices:
-                    prog += " 1,u({0}):u({1}){2}".format(u, u, " }.\n" if pos == len(self.__vertices) - 1 else ";")
-                    guess += " u({0}){1}".format(u, " }.\n" if pos == len(self.__vertices) - 1 else ";")
-                    pos += 1
-                prog += "#show u/1.\n"
-                prog += guess
-
-            # has to be clique
-            if len(self.__edges) > 0:
-                if not ground:
-                    prog += ":- u(Y1), u(Y2), not a(Y1, Y2), Y1 < Y2.\n"
-                    prog += "a(Y1, Y2) :- e(X, Y1), e(X, Y2), Y1 < Y2.\n"
-                    for k, e in self.__edges.iteritems():
-                        for v in e:
-                            prog += "e({0}, {1}).\n".format(k, v)
-                else:
-                    adj = self.adj
-                    for u in self.__vertices:
-                        for v in self.__vertices:
-                            if u < v and v not in adj[u]:
-                                prog += ":- u({0}), u({1}).\n".format(u, v)
-        else:
-            c = clingoctl
-
-        aset = [0, False, [], c, []]
-
-        if len(self.__edges) == 0 or len(self.__vertices) == 0:
-            return aset
-
-        if not ground and len(self.__edges) > 0:
-            prog += ":- "
-            for i in xrange(0, prevent_k_hyperedge):
-                if i > 0:
-                    prog += ", Y{0} < Y{1}, ".format(i - 1, i)
-                prog += "e(X, Y{0}), u(Y{0})".format(i)
-            prog += ".\n"
-            # prog += ":- e(X, Y1), e(X, Y2), e(X, Y3), u(Y1), u(Y2), u(Y3), Y1 < Y2, Y2 < Y3."
-        else:
-            constr = set()
-            for e in self.__edges.values():
-                if len(e) <= 2 or len(e) < prevent_k_hyperedge:
-                    continue
-                # prevent 3 elements from the same edge
-                sub = range(0, prevent_k_hyperedge)
-                while True:  # sub[0] <= len(e) - prevent_k_hyperedge:
-                    rule = []
-                    pos = 0
-                    # print sub, e
-                    for v in sub:
-                        rule.append(e[v])
-                        pos += 1
-
-                    rule = tuple(sorted(rule))
-                    if rule not in constr:
-                        constr.add(rule)
-                        prog += ":- " + ", ".join(("u({0})".format(r) for r in rule)) + ".\n"
-
-                    if sub[0] == len(e) - prevent_k_hyperedge:
-                        break
-
-                    # next position
-                    for i in xrange(prevent_k_hyperedge - 1, -1, -1):
-                        if sub[i] < len(e) + (i - prevent_k_hyperedge):
-                            sub[i] += 1
-                            for j in xrange(i + 1, prevent_k_hyperedge):
-                                sub[j] = sub[i] + (j - i)
-                            break
-
-        # print "XX, ", self.__edges, self.__vertices
-        # print(prog)
-        c.add("prog{0}".format(prevent_k_hyperedge), [], str(prog))
-
-        def solver(c, om):
-            c.ground([("prog{0}".format(prevent_k_hyperedge), [])])
-            # print "grounded"
-            c.solve(on_model=om)
-
-        t = threading.Thread(target=solver, args=(c, __on_model(aset)))
-        t.start()
-        t.join(timeout)
-        c.interrupt()
-        t.join()
-
-        aset[1] |= c.statistics["summary"]["models"]["optimal"] > 0
-        aset[4] = c.statistics
-        # print c.statistics
-        return aset
+    # def largest_clique_asp(self, clingoctl=None, timeout=10, enum=True, usc=True, ground=False, prevent_k_hyperedge=3,
+    #                        solve_limit="umax,umax"):
+    #     if clingo is None:
+    #         raise ImportError()
+    #
+    #     @curry
+    #     def __on_model(aset, model):
+    #         if len(model.cost) == 0:
+    #             return
+    #         # print model, model.cost, model.optimality_proven
+    #         aset[1] |= model.optimality_proven
+    #         opt = abs(model.cost[0])
+    #         if opt >= aset[0]:
+    #             if opt > aset[0]:
+    #                 aset[2] = []
+    #             aset[0] = opt
+    #             answer_set = [safe_int(x) for x in str(model).translate(None, "u()").split(" ")]
+    #             # might get "fake" duplicates :(, with different model.optimality_proven
+    #             if answer_set not in aset[2][-1:]:
+    #                 aset[2].append(answer_set)
+    #
+    #     prog = MutableString()
+    #
+    #     if clingoctl is None:
+    #         c = clingo.Control()
+    #
+    #         if usc:
+    #             c.configuration.solver.opt_strategy = "usc,pmres,disjoint,stratify"
+    #             c.configuration.solver.opt_usc_shrink = "min"
+    #         c.configuration.solve.opt_mode = "optN" if enum else "opt"
+    #         c.configuration.solve.models = 0
+    #         c.configuration.solve.solve_limit = solve_limit
+    #
+    #         guess = MutableString()
+    #         pos = 0
+    #         if len(self.__vertices) > 0:
+    #             guess += "{"
+    #             prog += "#maximize {"
+    #             for u in self.__vertices:
+    #                 prog += " 1,u({0}):u({1}){2}".format(u, u, " }.\n" if pos == len(self.__vertices) - 1 else ";")
+    #                 guess += " u({0}){1}".format(u, " }.\n" if pos == len(self.__vertices) - 1 else ";")
+    #                 pos += 1
+    #             prog += "#show u/1.\n"
+    #             prog += guess
+    #
+    #         # has to be clique
+    #         if len(self.__edges) > 0:
+    #             if not ground:
+    #                 prog += ":- u(Y1), u(Y2), not a(Y1, Y2), Y1 < Y2.\n"
+    #                 prog += "a(Y1, Y2) :- e(X, Y1), e(X, Y2), Y1 < Y2.\n"
+    #                 for k, e in self.__edges.iteritems():
+    #                     for v in e:
+    #                         prog += "e({0}, {1}).\n".format(k, v)
+    #             else:
+    #                 adj = self.adj
+    #                 for u in self.__vertices:
+    #                     for v in self.__vertices:
+    #                         if u < v and v not in adj[u]:
+    #                             prog += ":- u({0}), u({1}).\n".format(u, v)
+    #     else:
+    #         c = clingoctl
+    #
+    #     aset = [0, False, [], c, []]
+    #
+    #     if len(self.__edges) == 0 or len(self.__vertices) == 0:
+    #         return aset
+    #
+    #     if not ground and len(self.__edges) > 0:
+    #         prog += ":- "
+    #         for i in xrange(0, prevent_k_hyperedge):
+    #             if i > 0:
+    #                 prog += ", Y{0} < Y{1}, ".format(i - 1, i)
+    #             prog += "e(X, Y{0}), u(Y{0})".format(i)
+    #         prog += ".\n"
+    #         # prog += ":- e(X, Y1), e(X, Y2), e(X, Y3), u(Y1), u(Y2), u(Y3), Y1 < Y2, Y2 < Y3."
+    #     else:
+    #         constr = set()
+    #         for e in self.__edges.values():
+    #             if len(e) <= 2 or len(e) < prevent_k_hyperedge:
+    #                 continue
+    #             # prevent 3 elements from the same edge
+    #             sub = range(0, prevent_k_hyperedge)
+    #             while True:  # sub[0] <= len(e) - prevent_k_hyperedge:
+    #                 rule = []
+    #                 pos = 0
+    #                 # print sub, e
+    #                 for v in sub:
+    #                     rule.append(e[v])
+    #                     pos += 1
+    #
+    #                 rule = tuple(sorted(rule))
+    #                 if rule not in constr:
+    #                     constr.add(rule)
+    #                     prog += ":- " + ", ".join(("u({0})".format(r) for r in rule)) + ".\n"
+    #
+    #                 if sub[0] == len(e) - prevent_k_hyperedge:
+    #                     break
+    #
+    #                 # next position
+    #                 for i in xrange(prevent_k_hyperedge - 1, -1, -1):
+    #                     if sub[i] < len(e) + (i - prevent_k_hyperedge):
+    #                         sub[i] += 1
+    #                         for j in xrange(i + 1, prevent_k_hyperedge):
+    #                             sub[j] = sub[i] + (j - i)
+    #                         break
+    #
+    #     # print "XX, ", self.__edges, self.__vertices
+    #     # print(prog)
+    #     c.add("prog{0}".format(prevent_k_hyperedge), [], str(prog))
+    #
+    #     def solver(c, om):
+    #         c.ground([("prog{0}".format(prevent_k_hyperedge), [])])
+    #         # print "grounded"
+    #         c.solve(on_model=om)
+    #
+    #     t = threading.Thread(target=solver, args=(c, __on_model(aset)))
+    #     t.start()
+    #     t.join(timeout)
+    #     c.interrupt()
+    #     t.join()
+    #
+    #     aset[1] |= c.statistics["summary"]["models"]["optimal"] > 0
+    #     aset[4] = c.statistics
+    #     # print c.statistics
+    #     return aset
 
     def relabel_consecutively(self, revert=True):
         return self.relabel(relab.consecutive_substitution(self.__vertices),

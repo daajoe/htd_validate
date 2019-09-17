@@ -1,5 +1,5 @@
 import logging
-from cStringIO import StringIO
+from io import StringIO
 
 import networkx as nx
 from htd_validate.decompositions import GeneralizedHypertreeDecomposition

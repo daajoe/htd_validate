@@ -1,9 +1,9 @@
 import logging
 import sys
-from cStringIO import StringIO
+from io import StringIO
 from collections import defaultdict
 from decimal import Decimal
-from itertools import count, imap, izip
+from itertools import count
 from operator import itemgetter
 
 import htd_validate.utils.relabelling as relab

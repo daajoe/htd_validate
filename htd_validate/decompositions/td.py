@@ -1,6 +1,6 @@
 import logging
-from cStringIO import StringIO
-from itertools import count, imap, izip
+from io import StringIO
+from itertools import count
 from operator import itemgetter
 
 import networkx as nx
@@ -77,7 +77,7 @@ class TreeDecomposition(Decomposition):
         relabeled_bags = {tree_mapping[k]: v for k, v in self.bags.iteritems()}
         relabeled_bags = sorted(relabeled_bags.items(), key=itemgetter(0))
         for bag_id, bag in relabeled_bags:
-            ostream.write('b %s %s\n' % (bag_id, ' '.join(imap(str, bag))))
+            ostream.write('b %s %s\n' % (bag_id, ' '.join(map(str, bag))))
         for u, v in tree.edges_iter():
             ostream.write('%s %s\n' % (u, v))
         ostream.flush()

@@ -1,5 +1,5 @@
 import logging
-from cStringIO import StringIO
+from io import StringIO
 
 from htd_validate.decompositions import GeneralizedHypertreeDecomposition
 from htd_validate.utils import Hypergraph
