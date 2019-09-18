@@ -18,27 +18,36 @@
 # License along with hypergraph.py.  If not, see
 # <http://www.gnu.org/licenses/>.
 from __future__ import print_function
+
 import collections
 
 
 def relabel_sequence(seq, substitution):
-    return map(lambda v: substitution[v], seq)
+    return list(map(lambda v: substitution[v], seq))
 
 
 def consecutive_substitution(seq):
-    return {v: pos for pos, v in zip(xrange(1, len(seq) + 1), seq)}
+    return {v: pos for pos, v in zip(range(1, len(seq) + 1), seq)}
 
 
 def revert_substitution(substitution):
-    return {v: k for k, v in substitution.iteritems()}
+    return {v: k for k, v in substitution.items()}
 
 
 # TODO: probably replace (...) by tuple([...]) in inner tuple comprehension
 def relabel_dict(thedict, substitution=None, substitution_keys=None, typ=tuple):
     assert (substitution is not None or substitution_keys is not None)
 
-    def lab(substi, v): return substi[v] if substi is not None else v  # PEP says no lambda here :/
+    def lab(substi, v):
+        if substi is not None:
+            return substi[v]
+        else:
+            return v
 
-    def lab_val(substi, e): return typ(lab(substi, v) for v in e) if isinstance(e, collections.Iterable) else e
+    def lab_val(substi, e):
+        if isinstance(e, collections.Iterable):
+            return typ(lab(substi, v) for v in e)
+        else:
+            return e
 
-    return {lab(substitution_keys, k): lab_val(substitution, e) for (k, e) in thedict.iteritems()}
+    return {lab(substitution_keys, k): lab_val(substitution, e) for (k, e) in thedict.items()}

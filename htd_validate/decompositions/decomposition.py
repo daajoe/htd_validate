@@ -7,6 +7,7 @@ from itertools import chain
 
 import htd_validate.utils.relabelling as relab
 import networkx as nx
+# noinspection PyUnresolvedReferences
 from htd_validate.utils import HypergraphPrimalView
 from networkx.drawing.nx_agraph import graphviz_layout
 
@@ -38,7 +39,7 @@ class Decomposition(object):
     def findIntersectingBag(self, edge):
         tdinter = None
         tdfound = None
-        for i, b in self.bags.iteritems():
+        for i, b in self.bags.items():
             tdinter = b.intersection(edge)
             if len(tdinter) > 0:
                 tdfound = i
@@ -289,7 +290,7 @@ class Decomposition(object):
                 exit(2)
             if len(decomp) == 1:
                 # noinspection PyUnresolvedReferences
-                decomp.tree.add_node(decomp.bags.iterkeys().next())
+                decomp.tree.add_node(decomp.bags.keys().next())
             if decomp.specific_valiation(decomp, header):
                 logging.critical('Decomposition specific validation failed.')
                 exit(2)
@@ -312,7 +313,7 @@ class Decomposition(object):
         # TODO: something missing here
         covered_edges = {e: False for e in self.hypergraph.edges_iter()}
         for e in self.hypergraph.edges_iter():
-            if not any(set(e) <= bag for bag in self.bags.itervalues()):
+            if not any(set(e) <= bag for bag in self.bags.values()):
                 logging.error('Edge "%s" is not covered in any bag.' % str(e))
                 return False
         return True
@@ -329,7 +330,7 @@ class Decomposition(object):
 
     def bag_occuences(self):
         vertex2bags = defaultdict(set)
-        for n, bag in self.bags.iteritems():
+        for n, bag in self.bags.items():
             for v in bag:
                 vertex2bags[v].add(n)
         logging.debug('Bag occurences yields: %s' % vertex2bags)
@@ -357,7 +358,7 @@ class Decomposition(object):
 
     @property
     def num_vertices(self):
-        return len(set(chain.from_iterable(self.bags.itervalues())))
+        return len(set(chain.from_iterable(self.bags.values())))
 
     @staticmethod
     def specific_valiation(td, problem_statement):
@@ -422,7 +423,7 @@ class Decomposition(object):
                 bags = {}
                 logging.info("hyperedge_function %s" % self.hyperedge_function)
 
-                for k, v in self.bags.iteritems():
+                for k, v in self.bags.items():
                     if self.hyperedge_function:
                         w = ','.join(
                             str(l) + '\n' * (n % 4 == 3) for n, l in enumerate(self.hyperedge_function[k].values()))

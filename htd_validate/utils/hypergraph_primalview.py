@@ -382,6 +382,9 @@ class HypergraphPrimalView(object):
                 vals = line.split(" ")
                 print(vals)
 
+
+
+
     # handle with care!
     # returns tuple (list of "almost" (depending on \emph{simplicial_diff}) simplicial vertices, clique) per clique
     # fixme: modify/replace nx.enumerate_all_cliques!
