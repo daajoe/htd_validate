@@ -1,8 +1,8 @@
 import logging
 import sys
-from io import StringIO
 from collections import defaultdict
 from decimal import Decimal
+from io import StringIO
 from itertools import count
 from operator import itemgetter
 
@@ -118,6 +118,17 @@ class GeneralizedHypertreeDecomposition(Decomposition):
         logging.debug("Edge_ids are %s" % edge_ids)
         return edge_ids
 
+    def fraction2decimal(self, x):
+        if isinstance(x, float):
+            return Decimal(x)
+        ret = x.limit_denominator(10000)
+        # ret = x
+        ret = Decimal(ret.numerator / ret.denominator)
+        # if ret + self.epsilon > 1:
+        #     return Decimal(1)
+        logging.debug(f"x{x}={ret}", end='\t')
+        return ret
+
     def _B(self, t):
         logging.info("Computing bag condition B(lambda_t) for node %s" % t)
         ret = set()
@@ -128,10 +139,17 @@ class GeneralizedHypertreeDecomposition(Decomposition):
             # e \in E(H), v \in e: self._edge_ids_where_v_occurs(v)
             # lambda_u_e_v: {lambda_u(e) : e \in E(H), v \in e}
             lambda_u_e_v = list(map(lambda e: self.hyperedge_function[t][e] if e in self.hyperedge_function[t] else 0,
-                               self._edge_ids_where_v_occurs(v)))
+                                    self._edge_ids_where_v_occurs(v)))
             logging.info('lambda(%s) = %s' % (t, lambda_u_e_v))
             logging.info('sum(%s) = %s' % (t, str(sum(lambda_u_e_v))))
-            bag_sum = sum(map(lambda x: Decimal(x), lambda_u_e_v)) + Decimal(self.epsilon)
+            logging.error(lambda_u_e_v)
+            logging.error(list(map(self.fraction2decimal, lambda_u_e_v)))
+            bag_sum = sum(map(self.fraction2decimal, lambda_u_e_v)) + Decimal(self.epsilon)
+            logging.info("")
+            # bag_sum = sum(map(lambda x: Decimal(x.numerator/x.denominator), lambda_u_e_v)) + Decimal(self.epsilon)
+            logging.error(f"Bag sum(v={v})={bag_sum}")
+            # exit(1)
+
             logging.info("sum_prec(%s)=%s" % (v, str(bag_sum)))
             logging.info("  @Epsilon=%s" % self.epsilon)
             # REQUIRED DUE TO FLOATING POINT ISSUES
@@ -149,6 +167,7 @@ class GeneralizedHypertreeDecomposition(Decomposition):
 
     def edge_function_holds(self):
         for t in self.tree.nodes():
+            print(f"BAGS: {self.bags[t]} / {self._B(t)}")
             if not (self.bags[t] <= self._B(t)):
                 logging.error('Edge function property does not hold for node "%s"' % t)
                 logging.error(

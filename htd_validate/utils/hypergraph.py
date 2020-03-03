@@ -5,7 +5,7 @@
 # Johannes K. Fichte, TU Wien, Austria*
 # Markus A. Hecher, TU Wien, Austria*
 #
-# Copyright 2019
+# Copyright 2019, 2020
 # Johannes K. Fichte, TU Dresden, Germany*
 # Markus A. Hecher, TU Wien, Austria*
 #
@@ -42,9 +42,7 @@ try:
 except ImportError:
     cx = None
 
-from pymonad.Reader import curry
-
-#TODO solver handling
+# TODO solver handling
 try:
     import z3
 except ImportError:
@@ -54,8 +52,6 @@ try:
     import clingo
 except:
     clingo = None
-
-# from pymonad.Reader import curry
 
 # noinspection PyUnresolvedReferences
 from htd_validate.utils.integer import safe_int
@@ -128,7 +124,7 @@ class Hypergraph(object):
 
     def iter_twin_neighbours(self):
         ngb = {}
-        #TODO: fixme here seems to be something off
+        # TODO: fixme here seems to be something off
         for v in self.nodes_iter():
             tp = tuple(sorted(self.adjByNode(v, strict=False).keys()))
             if tp not in ngb:
@@ -136,13 +132,12 @@ class Hypergraph(object):
             ngb[tp].append(v)
 
         for v in ngb.values():
-            assert(len(v) >= 1)
+            assert (len(v) >= 1)
             if len(v) >= 2:
                 yield v
 
-
     def iter_twin_vertices(self):
-        #problem: we need to compare vertices by vertices
+        # problem: we need to compare vertices by vertices
 
         def ngbsOfWrt(u, v):
             ngbs = []
@@ -161,7 +156,7 @@ class Hypergraph(object):
                     elif u in reprs and v in reprs and reprs[u] == reprs[v]:
                         continue
                     elif ngbsOfWrt(u, v) == ngbsOfWrt(v, u):
-                        #new representative u for both nodes
+                        # new representative u for both nodes
                         if v in reprs:
                             reprs[u] = reprs[v]
                             twins[reprs[v]].append(u)
@@ -175,66 +170,66 @@ class Hypergraph(object):
             for v in twins.values():
                 yield v
 
-#    def maximize_fhec(self, timeout=10):
-#        if z3 is None:
-#            raise ImportError()
-#        solver = z3.Optimize()
-#        solver.set("timeout", timeout)
-#        vars = {}
-#        edges = {}
-#        #rev = {}
-#        start = time.clock()
-#        m = z3.Int(name="cliquesize")
-#
-#        for (k, e) in self.__edges.iteritems():
-#            edges[k] = z3.Real(name="edge{0}".format(k))
-#            solver.add(edges[k] <= 1)
-#            solver.add(edges[k] >= 0)
-#
-#        for v in self.nodes_iter():
-#            vars[v] = z3.Int(name="node{0}".format(v))
-#            #rev[vars[v]] = v
-#            solver.add(vars[v] <= 1)
-#            solver.add(vars[v] >= 0)
-#            solver.add(z3.Or(vars[v] == 0, z3.Sum([edges[k] for k in self.incident_edges(v)]) >= 1))
-#
-#        solver.add(z3.Sum([edges[k] for k in self.__edges]) <= n)
-#        solver.add(z3.Sum([vars[v] for v in self.nodes_iter()]) >= m)
-#        #solver.add(z3.Or([vars[v] == 1 for v in self.nodes_iter()]))
-#        adj = self.adj
-#        for u in self.nodes_iter():
-#            for v in self.nodes_iter():
-#                if u < v and u not in adj[v]:
-#                    solver.add(z3.Or(vars[u] == 0, vars[v] == 0))
-#            if timeout != 0 and time.clock() - start >= timeout:
-#                return None
-#        r = None
-#        try:
-#            #print "solving"
-#            r = solver.maximize(m)
-#            solver.check()
-#        except z3.Z3Exception, e:
-#            logging.error(e.message)
-#        if r is None:
-#            return None
-#
-#        res = solver.lower(r)
-#        #assert(str(res) != 'epsilon' and str(res) != 'unsat' and isinstance(res, z3.IntNumRef) and res.as_long() >= 1)
-#        if str(res) == 'epsilon' or str(res) == 'unsat':
-#            logging.error(res)
-#        elif not isinstance(res, z3.IntNumRef):
-#            logging.error("not an int")
-#        elif res.as_long() < 1:
-#            logging.error("clique result < 1")
-#        else:
-#            cl = [k for (k, v) in vars.iteritems() if solver.model()[v].as_long() == 1]
-#            if len(cl) != res.as_long():
-#                logging.error("{0} vs. {1}".format(len(cl), res.as_long()))
-#                #assert(len(cl) == res.as_long())
-#                return None
-#            return cl
-#        return None
-#
+    #    def maximize_fhec(self, timeout=10):
+    #        if z3 is None:
+    #            raise ImportError()
+    #        solver = z3.Optimize()
+    #        solver.set("timeout", timeout)
+    #        vars = {}
+    #        edges = {}
+    #        #rev = {}
+    #        start = time.clock()
+    #        m = z3.Int(name="cliquesize")
+    #
+    #        for (k, e) in self.__edges.iteritems():
+    #            edges[k] = z3.Real(name="edge{0}".format(k))
+    #            solver.add(edges[k] <= 1)
+    #            solver.add(edges[k] >= 0)
+    #
+    #        for v in self.nodes_iter():
+    #            vars[v] = z3.Int(name="node{0}".format(v))
+    #            #rev[vars[v]] = v
+    #            solver.add(vars[v] <= 1)
+    #            solver.add(vars[v] >= 0)
+    #            solver.add(z3.Or(vars[v] == 0, z3.Sum([edges[k] for k in self.incident_edges(v)]) >= 1))
+    #
+    #        solver.add(z3.Sum([edges[k] for k in self.__edges]) <= n)
+    #        solver.add(z3.Sum([vars[v] for v in self.nodes_iter()]) >= m)
+    #        #solver.add(z3.Or([vars[v] == 1 for v in self.nodes_iter()]))
+    #        adj = self.adj
+    #        for u in self.nodes_iter():
+    #            for v in self.nodes_iter():
+    #                if u < v and u not in adj[v]:
+    #                    solver.add(z3.Or(vars[u] == 0, vars[v] == 0))
+    #            if timeout != 0 and time.clock() - start >= timeout:
+    #                return None
+    #        r = None
+    #        try:
+    #            #print "solving"
+    #            r = solver.maximize(m)
+    #            solver.check()
+    #        except z3.Z3Exception, e:
+    #            logging.error(e.message)
+    #        if r is None:
+    #            return None
+    #
+    #        res = solver.lower(r)
+    #        #assert(str(res) != 'epsilon' and str(res) != 'unsat' and isinstance(res, z3.IntNumRef) and res.as_long() >= 1)
+    #        if str(res) == 'epsilon' or str(res) == 'unsat':
+    #            logging.error(res)
+    #        elif not isinstance(res, z3.IntNumRef):
+    #            logging.error("not an int")
+    #        elif res.as_long() < 1:
+    #            logging.error("clique result < 1")
+    #        else:
+    #            cl = [k for (k, v) in vars.iteritems() if solver.model()[v].as_long() == 1]
+    #            if len(cl) != res.as_long():
+    #                logging.error("{0} vs. {1}".format(len(cl), res.as_long()))
+    #                #assert(len(cl) == res.as_long())
+    #                return None
+    #            return cl
+    #        return None
+    #
 
     def largest_hyperedge(self):
         maxe = None
@@ -251,17 +246,17 @@ class Hypergraph(object):
         solver = z3.Optimize()
         solver.set("timeout", timeout)
         vars = {}
-        #rev = {}
+        # rev = {}
         start = time.clock()
         m = z3.Int(name="cliquesize")
         for v in self.nodes_iter():
             vars[v] = z3.Int(name="node{0}".format(v))
-            #rev[vars[v]] = v
+            # rev[vars[v]] = v
             solver.add(vars[v] <= 1)
             solver.add(vars[v] >= 0)
 
         solver.add(z3.Sum([vars[v] for v in self.nodes_iter()]) >= m)
-        #solver.add(z3.Or([vars[v] == 1 for v in self.nodes_iter()]))
+        # solver.add(z3.Or([vars[v] == 1 for v in self.nodes_iter()]))
         adj = self.adj
         for u in self.nodes_iter():
             for v in self.nodes_iter():
@@ -279,7 +274,7 @@ class Hypergraph(object):
             return None
 
         res = solver.lower(r)
-        #assert(str(res) != 'epsilon' and str(res) != 'unsat' and isinstance(res, z3.IntNumRef) and res.as_long() >= 1)
+        # assert(str(res) != 'epsilon' and str(res) != 'unsat' and isinstance(res, z3.IntNumRef) and res.as_long() >= 1)
         if str(res) == 'epsilon' or str(res) == 'unsat':
             logging.error(res)
         elif not isinstance(res, z3.IntNumRef):
@@ -290,22 +285,25 @@ class Hypergraph(object):
             cl = [k for (k, v) in vars.items() if solver.model()[v].as_long() == 1]
             if len(cl) != res.as_long():
                 logging.error("{0} vs. {1}".format(len(cl), res.as_long()))
-                #assert(len(cl) == res.as_long())
+                # assert(len(cl) == res.as_long())
                 return None
-            #print cl
+            # print cl
             return cl
         return None
 
-
-    #TODO: fixme
+    # TODO: fixme
     # --solve-limit=<n>[,<m>] : Stop search after <n> conflicts or <m> restarts
     def largest_clique_asp(self, clingoctl=None, timeout=10, enum=True, usc=True, ground=False, prevent_k_hyperedge=3,
                            solve_limit="umax,umax"):
         if clingo is None:
             raise ImportError()
 
-        @curry
-        def __on_model(aset, model):
+        #TODO:
+        # replace with
+        # with prg.solve_iter() as it:
+        #     for m in it: print
+        #     m
+        def __on_model(model):
             if len(model.cost) == 0:
                 return
             # print model, model.cost, model.optimality_proven
@@ -407,7 +405,7 @@ class Hypergraph(object):
                             break
 
         # print "XX, ", self.__edges, self.__vertices
-        print(prog.getvalue())
+        # print(prog.getvalue())
 
         c.add("prog{0}".format(prevent_k_hyperedge), [], prog.getvalue())
 
@@ -416,7 +414,7 @@ class Hypergraph(object):
             # print "grounded"
             c.solve(on_model=om)
 
-        t = threading.Thread(target=solver, args=(c, __on_model(aset)))
+        t = threading.Thread(target=solver, args=(c, __on_model))
         t.start()
         t.join(timeout)
         c.interrupt()
@@ -630,7 +628,12 @@ class Hypergraph(object):
     # TODO: copy?
     # @property
     def edges(self):
+        # return {}
+        # raise RuntimeError
+        # print(dir(self.__edges))
+        # exit(1)
         return self.__edges
+        # return copy.deepcopy(self.__edges)
 
     def get_edge(self, e):
         return self.__edges[e]
@@ -677,8 +680,8 @@ class Hypergraph(object):
             line = line.replace('\n', '')[:-1]
             edge_name = None
             edge_vertices = []
-            #replace whitespaces
-            line = line.replace(' ','')
+            # replace whitespaces
+            line = line.replace(' ', '')
 
             collect = []
             for char in line:
@@ -728,7 +731,7 @@ class Hypergraph(object):
                 stream = BZ2File(filename, 'r')
             elif mtype == 'gz':
                 stream = gzip.open(filename, 'r')
-            #TODO(jf): migration
+            # TODO(jf): migration
             elif mtype == 'xz':
                 stream = lzma.open(filename, 'r')
             else:
