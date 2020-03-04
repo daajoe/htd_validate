@@ -10,6 +10,7 @@ import htd_validate.utils.relabelling as relab
 import networkx as nx
 from htd_validate.decompositions import Decomposition
 from htd_validate.utils import Hypergraph
+from fractions import Fraction
 
 
 class GeneralizedHypertreeDecomposition(Decomposition):
@@ -26,8 +27,8 @@ class GeneralizedHypertreeDecomposition(Decomposition):
     def __init__(self, hypergraph=None, plot_if_td_invalid=False, tree=None, bags=None, hyperedge_function=None,
                  epsilon=None):
         if not epsilon:
-            epsilon = Decimal(0.001)
-        self.epsilon = epsilon
+            epsilon = Fraction(0.001)
+        self.epsilon = Fraction(epsilon)
         if not hyperedge_function:
             self.hyperedge_function = defaultdict(dict)
         else:
@@ -119,7 +120,7 @@ class GeneralizedHypertreeDecomposition(Decomposition):
         return edge_ids
 
     def fraction2decimal(self, x):
-        if isinstance(x, float):
+        if isinstance(x, float) or isinstance(x, int):
             return Decimal(x)
         ret = x.limit_denominator(10000)
         # ret = x
@@ -142,12 +143,13 @@ class GeneralizedHypertreeDecomposition(Decomposition):
                                     self._edge_ids_where_v_occurs(v)))
             logging.info('lambda(%s) = %s' % (t, lambda_u_e_v))
             logging.info('sum(%s) = %s' % (t, str(sum(lambda_u_e_v))))
-            logging.error(lambda_u_e_v)
-            logging.error(list(map(self.fraction2decimal, lambda_u_e_v)))
-            bag_sum = sum(map(self.fraction2decimal, lambda_u_e_v)) + Decimal(self.epsilon)
+            # logging.error(lambda_u_e_v)
+            # logging.error(list(map(self.fraction2decimal, lambda_u_e_v)))
+            # bag_sum = sum(map(self.fraction2decimal, lambda_u_e_v)) + self.epsilon
+            bag_sum = sum(lambda_u_e_v) + self.epsilon
             logging.info("")
             # bag_sum = sum(map(lambda x: Decimal(x.numerator/x.denominator), lambda_u_e_v)) + Decimal(self.epsilon)
-            logging.error(f"Bag sum(v={v})={bag_sum}")
+            # logging.error(f"Bag sum(v={v})={bag_sum}")
             # exit(1)
 
             logging.info("sum_prec(%s)=%s" % (v, str(bag_sum)))
@@ -167,7 +169,7 @@ class GeneralizedHypertreeDecomposition(Decomposition):
 
     def edge_function_holds(self):
         for t in self.tree.nodes():
-            print(f"BAGS: {self.bags[t]} / {self._B(t)}")
+            logging.debug(f"BAGS: {self.bags[t]} / {self._B(t)}")
             if not (self.bags[t] <= self._B(t)):
                 logging.error('Edge function property does not hold for node "%s"' % t)
                 logging.error(
