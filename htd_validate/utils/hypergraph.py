@@ -31,6 +31,7 @@ import lzma
 import mimetypes
 import threading
 import time
+import sys
 from bz2 import BZ2File
 from io import StringIO
 
@@ -411,6 +412,155 @@ class Hypergraph(object):
 
         def solver(c, om):
             c.ground([("prog{0}".format(prevent_k_hyperedge), [])])
+            # print "grounded"
+            c.solve(on_model=om)
+
+        t = threading.Thread(target=solver, args=(c, __on_model))
+        t.start()
+        t.join(timeout)
+        c.interrupt()
+        t.join()
+
+        aset[1] |= c.statistics["summary"]["models"]["optimal"] > 0
+        aset[4] = c.statistics
+        # print c.statistics
+        return aset
+
+    def encoding_clique_guess(self):
+        guess = StringIO()
+        pos = 0
+        sep = lambda pos: " }.\n" if pos == len(self.__vertices) - 1 else ";"
+
+        if len(self.__vertices) > 0:
+            guess.write("{ ")
+            for u in self.__vertices:
+                guess.write(" u({0}){1}".format(u, sep(pos)))
+                pos += 1
+            guess.write("#show u/1.\n")
+        return guess.getvalue()
+
+    def encoding_maximize(self):
+        prog = StringIO()
+        sep = lambda pos: " }.\n" if pos == len(self.__vertices) - 1 else ";"
+
+        pos = 0
+        if len(self.__vertices) > 0:
+            prog.write("#maximize { ")
+            for u in self.__vertices:
+                prog.write(" 1,u({0}):u({0}){1}".format(u, sep(pos)))
+                pos += 1
+        return prog.getvalue()
+
+    def encoding_maximize_hyperedges(self, minimize=False):
+        prog = StringIO()
+
+        if len(self.__edges) > 0:
+            prog.write("missing(A) :- e(A,U), not u(U).\n")
+            prog.write("#maximize {{ {0},A:e(A,_),not missing(A) }}.\n".format(-1 if minimize else 1))
+        return prog.getvalue()
+
+    def encoding_maximize_exclude_twins(self, twins):
+        prog = StringIO()
+        sep = lambda pos, l: " }.\n" if pos == l - 1 else ";"
+
+        pos = 0
+        for t in twins.values():
+            prog.write("#maximize {{ 1-X,t{0}:tw({0},X) }}.\n".format(pos))
+            prog.write("tw({0},X) :- X=#count {{ ".format(pos))
+
+            posi = 0
+            for v in t:
+                prog.write("1,u({0}),u({0}){1}".format(t, sep(posi, len(t))))
+                posi += 1
+            pos += 1
+        return prog.getvalue()
+
+    def encoding_largest_clique(self):
+        prog = StringIO()
+
+        prog.write(self.encoding_clique_guess())
+        prog.write(self.encoding_maximize())
+
+        # has to be clique
+        if len(self.__edges) > 0:
+            prog.write(":- u(Y1), u(Y2), not a(Y1, Y2), Y1 < Y2.\n")
+            prog.write("a(Y1, Y2) :- e(X, Y1), e(X, Y2), Y1 < Y2.\n")
+            for k, e in self.__edges.items():
+                for v in e:
+                    prog.write("e({0}, {1}).\n".format(k, v))
+        return prog.getvalue()
+
+    def encoding_largest_k_hyperclique(self, prevent_k_hyperedge=3):
+        prog = StringIO()
+
+        prog.write(self.encoding_clique_guess())
+        prog.write(self.encoding_maximize())
+
+        # has to be clique
+        if len(self.__edges) > 0:
+            prog.write(":- u(Y1), u(Y2), not a(Y1, Y2), Y1 < Y2.\n")
+            prog.write("a(Y1, Y2) :- e(X, Y1), e(X, Y2), Y1 < Y2.\n")
+            for k, e in self.__edges.items():
+                for v in e:
+                    prog.write("e({0}, {1}).\n".format(k, v))
+
+        prog.write(":- ")
+        for i in range(0, prevent_k_hyperedge):
+            if i > 0:
+                prog.write(", Y{0} < Y{1}, ".format(i - 1, i))
+            prog.write("e(X, Y{0}), u(Y{0})".format(i))
+        prog.write(".\n")
+        return prog.getvalue()
+
+
+    # --solve-limit=<n>[,<m>] : Stop search after <n> conflicts or <m> restarts
+    def solve_asp(self, encoding, clingoctl=None, timeout=10, enum=False, usc=True, solve_limit="umax,umax"):
+        if clingo is None:
+            raise ImportError()
+
+        c = clingoctl
+        if clingoctl is None:
+            c = clingo.Control()
+            if usc:
+                c.configuration.solver.opt_strategy = "usc,pmres,disjoint,stratify"
+                c.configuration.solver.opt_usc_shrink = "min"
+            c.configuration.solve.opt_mode = "optN" if enum else "opt"
+            c.configuration.solve.models = 0
+            c.configuration.solve.solve_limit = solve_limit
+
+        aset = [-sys.maxsize, False, [], c, []]
+
+        # TODO:
+        # replace with
+        # with prg.solve_iter() as it:
+        #     for m in it: print
+        #     m
+        def __on_model(model):
+            if len(model.cost) == 0:
+                return
+            # print model, model.cost, model.optimality_proven
+            aset[1] |= model.optimality_proven
+            # invert costs
+            opt = -(model.cost[0])
+            if opt >= aset[0]:
+                if opt > aset[0]:
+                    aset[2] = []
+                aset[0] = opt
+                answer_set = [safe_int(x) for x in str(model).translate(str.maketrans('', '', 'u()')).split(" ")]
+                # might get "fake" duplicates :(, with different model.optimality_proven
+                if answer_set not in aset[2][-1:]:
+                    aset[2].append(answer_set)
+
+        if len(self.__edges) == 0 or len(self.__vertices) == 0:
+            return aset
+
+        # print "XX, ", self.__edges, self.__vertices
+        print(encoding)
+
+        c.add("prog", [], encoding)
+
+        def solver(c, om):
+            c.ground([("prog", [])])
             # print "grounded"
             c.solve(on_model=om)
 
