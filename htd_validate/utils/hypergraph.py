@@ -439,16 +439,21 @@ class Hypergraph(object):
             guess.write("#show u/1.\n")
         return guess.getvalue()
 
+    # weak constraints: :~ atom, [cost@level,expression]
+    # note that higher levels are optimized first
+    # we use negative costs to maximize
     def encoding_maximize(self):
         prog = StringIO()
-        sep = lambda pos: " }.\n" if pos == len(self.__vertices) - 1 else ";"
+        #sep = lambda pos: " }.\n" if pos == len(self.__vertices) - 1 else ";"
 
-        pos = 0
-        if len(self.__vertices) > 0:
-            prog.write("#maximize { ")
-            for u in self.__vertices:
-                prog.write(" 1,u({0}):u({0}){1}".format(u, sep(pos)))
-                pos += 1
+        #pos = 0
+        #if len(self.__vertices) > 0:
+        #    prog.write("#maximize { ")
+        #    for u in self.__vertices:
+        #        pos += 1
+
+        prog.write("#maximize { 1,X:u(X) }.")
+        #prog.write(":~ u(X). [-1@1,X]")
         return prog.getvalue()
 
     def encoding_maximize_hyperedges(self, minimize=False):
@@ -456,7 +461,8 @@ class Hypergraph(object):
 
         if len(self.__edges) > 0:
             prog.write("missing(A) :- e(A,U), not u(U).\n")
-            prog.write("#maximize {{ {0},A:e(A,_),not missing(A) }}.\n".format(-1 if minimize else 1))
+            prog.write("#maximize { 1,A:missing(A) }.\n" if minimize else "#maximize { 1,A:e(A,_),not missing(A) }.\n")
+            #prog.write(":~ missing(A). [-1@1,A]\n" if minimize else ":~ e(A,_), not missing(A). [-1@1,A]\n")
         return prog.getvalue()
 
     def encoding_maximize_exclude_twins(self, twins):
@@ -464,8 +470,9 @@ class Hypergraph(object):
         sep = lambda pos, l: " }.\n" if pos == l - 1 else ";"
 
         pos = 0
+        prog.write("#maximize { 1-X,Y:tw(Y,X) }.\n")
+        #prog.write(":~ tw(Y,X). [X-1@1,Y]\n")
         for t in twins.values():
-            prog.write("#maximize {{ 1-X,t{0}:tw({0},X) }}.\n".format(pos))
             prog.write("tw({0},X) :- X=#count {{ ".format(pos))
 
             posi = 0
