@@ -160,7 +160,7 @@ class TestHypergraph(vtd.ValidateGraphTestCase):
 
     def testMaxCliqueExclTwins(self):
         stats_mc = [0] * 3
-        encoding = lambda x: x.encoding_largest_clique() + x.encoding_maximize_exclude_twins()
+        encoding = lambda x: x.encoding_largest_clique() + x.encoding_maximize_exclude_twins(x.iter_twin_vertices())
         self.maxCliqueByEncodingFromFile(encoding, stats_mc,
                                          self.filePath("testHG/") + "Nonogram-001-table.xml.hg", fischl_format=True)
-        self.assertEqual(stats_mc, [24, 0, 25])
+        self.assertEqual(stats_mc, [15, 1, 1])

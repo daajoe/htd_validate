@@ -333,7 +333,7 @@ class Hypergraph(object):
 
             guess = StringIO()
             pos = 0
-            sep = lambda pos: " }.\n" if pos == len(self.__vertices) - 1 else ";"
+            sep = lambda ps: " }.\n" if ps == len(self.__vertices) - 1 else ";"
             if len(self.__vertices) > 0:
                 guess.write("{")
                 prog.write("#maximize {")
@@ -429,7 +429,7 @@ class Hypergraph(object):
     def encoding_clique_guess(self):
         guess = StringIO()
         pos = 0
-        sep = lambda pos: " }.\n" if pos == len(self.__vertices) - 1 else ";"
+        sep = lambda ps: " }.\n" if ps == len(self.__vertices) - 1 else ";"
 
         if len(self.__vertices) > 0:
             guess.write("{ ")
@@ -472,19 +472,20 @@ class Hypergraph(object):
 
     def encoding_maximize_exclude_twins(self, twins):
         prog = StringIO()
-        sep = lambda pos, l: " }.\n" if pos == l - 1 else ";"
+        sep = lambda ps, l, twin: " }}. [X-1,{0}]\n".format(twin) if ps == l - 1 else ";"
 
-        pos = 0
-        prog.write("#maximize { 1-X,Y:tw(Y,X) }.\n")
+        #prog.write("#maximize { 1-X,Y:tw(Y,X),X>1 }.\n")
         #prog.write(":~ tw(Y,X). [X-1@1,Y]\n")
-        for t in twins.values():
-            prog.write("tw({0},X) :- X=#count {{ ".format(pos))
-
+        pos = 0
+        for ts in twins:
+            #print(ts)
+            prog.write(":~ X>1,X=#count {{ ".format(pos+1))
             posi = 0
-            for v in t:
-                prog.write("1,u({0}),u({0}){1}".format(t, sep(posi, len(t))))
+            for t in ts:
+                prog.write("1,{0}:u({0}){1}".format(t, sep(posi, len(ts), pos+1)))
                 posi += 1
             pos += 1
+        #print(prog.getvalue())
         return prog.getvalue()
 
     def encoding_largest_clique(self):
