@@ -82,23 +82,24 @@ class TestHypergraph(vtd.ValidateGraphTestCase):
         logging.debug(sol)
         self.assertEqual(2, len(sol))
 
-    def maxCliqueFromFile(self, maxC, fil, fischl_format=False, ground=False):
+    def maxCliqueFromFile(self, maxC, fil, fischl_format=False, ground=False, prevent_k_hyperedge=3):
         hg = self.loadFile(fil, fischl_format=fischl_format)
         self.assertIsNotNone(hg)
         #if len(hg.nodes()) >= 400:
         #    return
         #print hg.edges()
 
-        aset = hg.largest_clique_asp(timeout=2, enum=True, ground=ground)
+        aset = hg.largest_clique_asp(timeout=10, enum=True, ground=ground, prevent_k_hyperedge=prevent_k_hyperedge)
         maxC[0] = max(maxC[0], aset[0])
         if aset[1] == False:
             maxC[1] += 1
+        maxC[2] = len(aset[2])
 
         print(maxC[0], len(aset[2]), aset)
         #print maxC
 
     def testLargestClique(self):
-        mx = [0, 0]
+        mx = [0, 0, 0]
         self.maxCliqueFromFile(mx, self.filePath("testHG/") + "Nonogram-001-table.xml.hg",
                                     fischl_format=True, ground=False)
         self.maxCliqueFromFile(mx, self.filePath("testHG/") + "C13_7.edge")
@@ -115,3 +116,51 @@ class TestHypergraph(vtd.ValidateGraphTestCase):
                             self.maxCliqueFromFile(mx, self.filePath("../../../../../../hypergraphs/hyperbench/" + d + "/") + f,
                                                     fischl_format=True, ground=False)
         print(mx)
+
+    def maxCliqueByEncodingFromFile(self, encoding, maxC, fil, fischl_format=False):
+        hg = self.loadFile(fil, fischl_format=fischl_format)
+        self.assertIsNotNone(hg)
+        #if len(hg.nodes()) >= 400:
+        #    return
+        #print hg.edges()
+
+        aset = hg.solve_asp(encoding(hg), timeout=10, enum=True)
+        maxC[0] = max(maxC[0], aset[0])
+        if aset[1] == False:
+            maxC[1] += 1
+        maxC[2] = len(aset[2])
+
+        print(maxC[0], len(aset[2]), aset)
+        #print maxC
+
+    def testMaxCliqueKHyperClique(self):
+        for k in range(3, 6):
+            k_hyper_old = [0, 0, 0]
+            k_hyper = [0, 0, 0]
+            encoding_k_hyperclique = lambda x: x.encoding_largest_k_hyperclique(prevent_k_hyperedge=k)
+            self.maxCliqueByEncodingFromFile(encoding_k_hyperclique, k_hyper,
+                                             self.filePath("testHG/") + "Nonogram-001-table.xml.hg", fischl_format=True)
+            self.maxCliqueFromFile(k_hyper_old,
+                                             self.filePath("testHG/") + "Nonogram-001-table.xml.hg", fischl_format=True, ground=False, prevent_k_hyperedge=k)
+            self.assertEqual(k_hyper, k_hyper_old)
+
+    def testMaxCliqueInclNeighborhood(self):
+        stats_mc = [0] * 3
+        encoding = lambda x: x.encoding_largest_clique() + x.encoding_maximize_neighborhood()
+        self.maxCliqueByEncodingFromFile(encoding, stats_mc,
+                                         self.filePath("testHG/") + "Nonogram-001-table.xml.hg", fischl_format=True)
+        self.assertEqual(stats_mc, [346, 0, 10241])
+
+    def testMaxClique(self):
+        stats_mc = [0] * 3
+        encoding = lambda x: x.encoding_largest_clique()
+        self.maxCliqueByEncodingFromFile(encoding, stats_mc,
+                                             self.filePath("testHG/") + "Nonogram-001-table.xml.hg", fischl_format=True)
+        self.assertEqual(stats_mc, [24, 0, 25])
+
+    def testMaxCliqueExclTwins(self):
+        stats_mc = [0] * 3
+        encoding = lambda x: x.encoding_largest_clique() + x.encoding_maximize_exclude_twins(x.iter_twin_vertices())
+        self.maxCliqueByEncodingFromFile(encoding, stats_mc,
+                                         self.filePath("testHG/") + "Nonogram-001-table.xml.hg", fischl_format=True)
+        self.assertEqual(stats_mc, [15, 1, 1])

@@ -333,7 +333,7 @@ class Hypergraph(object):
 
             guess = StringIO()
             pos = 0
-            sep = lambda pos: " }.\n" if pos == len(self.__vertices) - 1 else ";"
+            sep = lambda ps: " }.\n" if ps == len(self.__vertices) - 1 else ";"
             if len(self.__vertices) > 0:
                 guess.write("{")
                 prog.write("#maximize {")
@@ -429,7 +429,7 @@ class Hypergraph(object):
     def encoding_clique_guess(self):
         guess = StringIO()
         pos = 0
-        sep = lambda pos: " }.\n" if pos == len(self.__vertices) - 1 else ";"
+        sep = lambda ps: " }.\n" if ps == len(self.__vertices) - 1 else ";"
 
         if len(self.__vertices) > 0:
             guess.write("{ ")
@@ -472,19 +472,20 @@ class Hypergraph(object):
 
     def encoding_maximize_exclude_twins(self, twins):
         prog = StringIO()
-        sep = lambda pos, l: " }.\n" if pos == l - 1 else ";"
+        sep = lambda ps, l, twin: " }}. [X-1,{0}]\n".format(twin) if ps == l - 1 else ";"
 
-        pos = 0
-        prog.write("#maximize { 1-X,Y:tw(Y,X) }.\n")
+        #prog.write("#maximize { 1-X,Y:tw(Y,X),X>1 }.\n")
         #prog.write(":~ tw(Y,X). [X-1@1,Y]\n")
-        for t in twins.values():
-            prog.write("tw({0},X) :- X=#count {{ ".format(pos))
-
+        pos = 0
+        for ts in twins:
+            #print(ts)
+            prog.write(":~ X>1,X=#count {{ ".format(pos+1))
             posi = 0
-            for v in t:
-                prog.write("1,u({0}),u({0}){1}".format(t, sep(posi, len(t))))
+            for t in ts:
+                prog.write("1,{0}:u({0}){1}".format(t, sep(posi, len(ts), pos+1)))
                 posi += 1
             pos += 1
+        #print(prog.getvalue())
         return prog.getvalue()
 
     def encoding_largest_clique(self):
@@ -502,24 +503,23 @@ class Hypergraph(object):
                     prog.write("e({0}, {1}).\n".format(k, v))
         return prog.getvalue()
 
-    def encoding_largest_k_hyperclique(self, prevent_k_hyperedge=3, oneshot=False):
+    def encoding_largest_k_hyperclique(self, prevent_k_hyperedge=3, incrementalShot=False):
         prog = StringIO()
 
-        prog.write(self.encoding_clique_guess())
-        prog.write(self.encoding_maximize())
+        if not incrementalShot:
+            prog.write(self.encoding_clique_guess())
+            prog.write(self.encoding_maximize())
 
-        # has to be clique
-        if len(self.__edges) > 0:
-            prog.write(":- u(Y1), u(Y2), not a(Y1, Y2), Y1 < Y2.\n")
-            prog.write("a(Y1, Y2) :- e(X, Y1), e(X, Y2), Y1 < Y2.\n")
-            for k, e in self.__edges.items():
-                for v in e:
-                    prog.write("e({0}, {1}).\n".format(k, v))
+            # has to be clique
+            if len(self.__edges) > 0:
+                prog.write(":- u(Y1), u(Y2), not a(Y1, Y2), Y1 < Y2.\n")
+                prog.write("a(Y1, Y2) :- e(X, Y1), e(X, Y2), Y1 < Y2.\n")
+                for k, e in self.__edges.items():
+                    for v in e:
+                        prog.write("e({0}, {1}).\n".format(k, v))
 
-        if oneshot:
-            prog.write(":- e(A,_), #count {{ 1,Y : e(A,Y), u(Y) }} >= {0}.\n".format(prevent_k_hyperedge))
-        else:
-            prog.write(self.encoding_prevent_k_hyperclique(prevent_k_hyperedge))
+        #prog.write(":- e(A,_), #count {{ 1,Y : e(A,Y), u(Y) }} >= {0}.\n".format(prevent_k_hyperedge))
+        prog.write(self.encoding_prevent_k_hyperclique(prevent_k_hyperedge))
         return prog.getvalue()
 
     def encoding_prevent_k_hyperclique(self, prevent_k_hyperedge=3):
@@ -534,6 +534,7 @@ class Hypergraph(object):
         return prog.getvalue()
 
     # --solve-limit=<n>[,<m>] : Stop search after <n> conflicts or <m> restarts
+    #@deprecated
     def solve_asp(self, encoding, clingoctl=None, timeout=10, enum=False, usc=True, solve_limit="umax,umax"):
         if clingo is None:
             raise ImportError()
