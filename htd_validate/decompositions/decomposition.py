@@ -1,7 +1,8 @@
 import logging
 import os
 import traceback
-from io import StringIO
+from io import TextIOWrapper
+from io import BytesIO
 from collections import defaultdict
 from itertools import chain
 
@@ -35,6 +36,7 @@ class Decomposition(object):
 
     def set_graph(self, hypergraph):
         self.hypergraph = hypergraph
+        print(hypergraph)
 
     def findIntersectingBag(self, edge):
         tdinter = None
@@ -290,7 +292,7 @@ class Decomposition(object):
                 exit(2)
             if len(decomp) == 1:
                 # noinspection PyUnresolvedReferences
-                decomp.tree.add_node(decomp.bags.keys().next())
+                decomp.tree.add_node(tuple(decomp.bags.keys())[0]) #.next())
             if decomp.specific_valiation(decomp, header):
                 logging.critical('Decomposition specific validation failed.')
                 exit(2)
@@ -344,14 +346,15 @@ class Decomposition(object):
             SG = self.tree.subgraph(vertex2bags[v])
             if not nx.is_connected(SG.to_undirected()):
                 logging.error('Subgraph induced by vertex "%s" is not connected' % v)
-                string = StringIO()
+                string = BytesIO()
                 nx.write_multiline_adjlist(SG, string)
                 logging.error('Involved bags: %s' % vertex2bags[v])
                 logging.error('Nodes of the hypergraph (should be the same): %s' % SG.nodes())
                 logging.error('Begin Adjacency Matrix')
                 # we skip comments from networkx
-                for line in string.getvalue().split('\n')[3:-1]:
+                for line in TextIOWrapper(string, encoding='utf-8').readlines()[3:-1]:
                     logging.error('%s' % line)
+                #assert(False)
                 logging.error('End Adjacency Matrix')
                 return False
         return True
