@@ -461,7 +461,14 @@ class Hypergraph(object):
         prog.write("#maximize { 1,Y:e(A,Y),e(A,X),u(X) }.\n")
         return prog.getvalue()
 
-    def encoding_maximize_hyperedges(self, minimize=False):
+    def encoding_maximize_used_hyperedges(self, minimize=False):
+        prog = StringIO()
+
+        if len(self.__edges) > 0:
+            prog.write("#maximize {{ {0},A:e(A,X),u(X) }}.\n".format(-1 if minimize else 1))
+        return prog.getvalue()
+
+    def encoding_maximize_completely_used_hyperedges(self, minimize=False):
         prog = StringIO()
 
         if len(self.__edges) > 0:
@@ -469,6 +476,16 @@ class Hypergraph(object):
             prog.write("#maximize { 1,A:missing(A) }.\n" if minimize else "#maximize { 1,A:e(A,_),not missing(A) }.\n")
             #prog.write(":~ missing(A). [-1@1,A]\n" if minimize else ":~ e(A,_), not missing(A). [-1@1,A]\n")
         return prog.getvalue()
+
+    #def encoding_maximize_incompletely_used_hyperedges(self, minimize=False):
+    #    prog = StringIO()
+    #
+    #    if len(self.__edges) > 0:
+    #        prog.write("missing(A) :- e(A,U), not u(U).\n")
+    #        prog.write("#maximize { 1,A:e(A,X),u(X),missing(A) }.\n" if minimize else "#maximize { 1,A:e(A,X),u(X),not missing(A) }.\n")
+    #        #prog.write(":~ missing(A). [-1@1,A]\n" if minimize else ":~ e(A,_), not missing(A). [-1@1,A]\n")
+    #    return prog.getvalue()
+
 
     def encoding_maximize_exclude_twins(self, twins):
         prog = StringIO()
@@ -488,11 +505,12 @@ class Hypergraph(object):
         #print(prog.getvalue())
         return prog.getvalue()
 
-    def encoding_largest_clique(self):
+    def encoding_largest_clique(self, maximize=True):
         prog = StringIO()
 
         prog.write(self.encoding_clique_guess())
-        prog.write(self.encoding_maximize())
+        if maximize:
+            prog.write(self.encoding_maximize())
 
         # has to be clique
         if len(self.__edges) > 0:

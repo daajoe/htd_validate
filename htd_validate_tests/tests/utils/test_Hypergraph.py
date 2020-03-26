@@ -164,3 +164,25 @@ class TestHypergraph(vtd.ValidateGraphTestCase):
         self.maxCliqueByEncodingFromFile(encoding, stats_mc,
                                          self.filePath("testHG/") + "Nonogram-001-table.xml.hg", fischl_format=True)
         self.assertEqual(stats_mc, [15, 1, 1])
+
+    def testCliqueMaxHyperedges(self):
+        stats_mc = [0] * 3
+        encoding = lambda x: x.encoding_largest_clique(maximize=False) + x.encoding_maximize_used_hyperedges()
+        self.maxCliqueByEncodingFromFile(encoding, stats_mc,
+                                             self.filePath("testHG/") + "Nonogram-001-table.xml.hg", fischl_format=True)
+        self.assertEqual(stats_mc, [15, 0, 10241])
+
+    def testCliqueMaxCompletelyUsedHyperedges(self):
+        stats_mc = [0] * 3
+        encoding = lambda x: x.encoding_largest_clique(maximize=False) + x.encoding_maximize_completely_used_hyperedges()
+        self.maxCliqueByEncodingFromFile(encoding, stats_mc,
+                                             self.filePath("testHG/") + "Nonogram-001-table.xml.hg", fischl_format=True)
+        self.assertEqual(stats_mc, [1, 0, 25])
+
+
+    #def testCliqueMaxIncompletelyUsedHyperedges(self):
+    #    stats_mc = [0] * 3
+    #    encoding = lambda x: x.encoding_largest_clique(maximize=False) + x.encoding_maximize_incompletely_used_hyperedges()
+    #    self.maxCliqueByEncodingFromFile(encoding, stats_mc,
+    #                                         self.filePath("testHG/") + "Nonogram-001-table.xml.hg", fischl_format=True)
+    #    self.assertEqual(stats_mc, [15, 0, 10241])
