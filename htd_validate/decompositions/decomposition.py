@@ -1,7 +1,8 @@
 import logging
 import os
 import traceback
-from io import StringIO
+from io import TextIOWrapper
+from io import BytesIO
 from collections import defaultdict
 from itertools import chain
 
@@ -35,6 +36,7 @@ class Decomposition(object):
 
     def set_graph(self, hypergraph):
         self.hypergraph = hypergraph
+        #print(hypergraph)
 
     def findIntersectingBag(self, edge):
         tdinter = None
@@ -237,7 +239,7 @@ class Decomposition(object):
                             log_critical('Empty bag.')
                             exit(2)
                         bag_name = int(line[1])
-                        if decomp.bags.has_key(bag_name):
+                        if bag_name in decomp.bags.keys():
                             log_critical('Duplicate bag.')
                             exit(2)
                         # TODO: implement type checking for htd|fhtd
@@ -290,7 +292,7 @@ class Decomposition(object):
                 exit(2)
             if len(decomp) == 1:
                 # noinspection PyUnresolvedReferences
-                decomp.tree.add_node(decomp.bags.keys().next())
+                decomp.tree.add_node(tuple(decomp.bags.keys())[0]) #.next())
             if decomp.specific_valiation(decomp, header):
                 logging.critical('Decomposition specific validation failed.')
                 exit(2)
@@ -311,6 +313,10 @@ class Decomposition(object):
     def edges_covered(self):
         # initialise with edges
         # TODO: something missing here
+        #print(self.hypergraph.edges())
+        #print(self.hypergraph.edges().values())
+        #for e in self.hypergraph.edges():
+        #    print(e)
         covered_edges = {e: False for e in self.hypergraph.edges_iter()}
         for e in self.hypergraph.edges_iter():
             if not any(set(e) <= bag for bag in self.bags.values()):
@@ -339,19 +345,20 @@ class Decomposition(object):
     def is_connected(self):
         vertex2bags = self.bag_occuences()
         # print self.hypergraph.number_of_edges()
-        for v in self.hypergraph.nodes_iter():
+        for v in self.hypergraph.nodes():
             logging.debug("vertex %s" % v)
             SG = self.tree.subgraph(vertex2bags[v])
             if not nx.is_connected(SG.to_undirected()):
                 logging.error('Subgraph induced by vertex "%s" is not connected' % v)
-                string = StringIO()
+                string = BytesIO()
                 nx.write_multiline_adjlist(SG, string)
                 logging.error('Involved bags: %s' % vertex2bags[v])
                 logging.error('Nodes of the hypergraph (should be the same): %s' % SG.nodes())
                 logging.error('Begin Adjacency Matrix')
                 # we skip comments from networkx
-                for line in string.getvalue().split('\n')[3:-1]:
+                for line in TextIOWrapper(string, encoding='utf-8').readlines()[3:-1]:
                     logging.error('%s' % line)
+                #assert(False)
                 logging.error('End Adjacency Matrix')
                 return False
         return True

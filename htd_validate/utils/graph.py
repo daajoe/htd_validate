@@ -175,15 +175,18 @@ class Graph(nx.Graph):
         :rtype Graph, dict
         :return: written hypergraph, remapping of vertices from old hypergraph
         """
-        mapping = {org_id: id for id, org_id in izip(count(start=1), self.nodes_iter())}
+        mapping = {org_id: id for id, org_id in zip(count(start=1), self.nodes())}
         graph = nx.relabel_nodes(self, mapping, copy=copy)
         gr_string = 'edge' if dimacs else 'tw'
         s = 'p ' if dimacs else ''
         stream.write('p %s %s %s\n' % (gr_string, graph.number_of_nodes(), graph.number_of_edges()))
-        for u, v in graph.edges_iter():
+        for u, v in graph.edges():
             stream.write('%s%s %s\n' % (s, u, v))
         stream.flush()
         return graph, mapping
+
+    def edges_iter(self):
+        return self.edges()
 
     def __str__(self):
         string = StringIO()

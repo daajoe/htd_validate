@@ -30,7 +30,7 @@ class HypertreeDecomposition(GeneralizedHypertreeDecomposition):
         logging.info('=' * 80)
         logging.info('Inverse edge function property')
         logging.info('=' * 80)
-        for u in self.tree.nodes_iter():
+        for u in self.tree.nodes():
             T_u = dfs_tree(self.tree, u)
             vertices_in_bags_below_u = set()
             for t in T_u.nodes():

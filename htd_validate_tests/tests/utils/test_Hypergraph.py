@@ -20,13 +20,13 @@ class TestHypergraph(vtd.ValidateGraphTestCase):
 
     def testTwins(self):
         hg = self.loadFile(self.filePath("testHG/") + "C13_7.edge")
-        print list(hg.iter_twin_vertices())
-        print list(hgv.HypergraphPrimalView(hg).iter_twin_vertices())
+        print(list(hg.iter_twin_vertices()))
+        print(list(hgv.HypergraphPrimalView(hg).iter_twin_vertices()))
         hg = self.loadFile(self.filePath("testHG/") + "C13_7_2.edge")
         #[[2, 3], [5, 6, 7]]
         #[[2, 3], [5, 6, 7, 8], [1, 4]]
-        print list(hg.iter_twin_vertices())
-        print list(hgv.HypergraphPrimalView(hg).iter_twin_vertices())
+        print(list(hg.iter_twin_vertices()))
+        print(list(hgv.HypergraphPrimalView(hg).iter_twin_vertices()))
         self.assertEqual([[2, 3], [5, 6, 7], [9, 10]], sorted(hg.iter_twin_vertices()))
         self.assertEqual([[1, 2, 3, 4], [5, 6, 7, 8], [9, 10]], sorted(hgv.HypergraphPrimalView(hg).iter_twin_vertices()))
 
@@ -94,7 +94,7 @@ class TestHypergraph(vtd.ValidateGraphTestCase):
         if aset[1] == False:
             maxC[1] += 1
 
-        print maxC[0], len(aset[2]), aset
+        print(maxC[0], len(aset[2]), aset)
         #print maxC
 
     def testLargestClique(self):
@@ -111,7 +111,7 @@ class TestHypergraph(vtd.ValidateGraphTestCase):
                 for d in dirs:
                     for _, _, files in os.walk(os.path.join(path, d)):
                         for f in files:
-                            print d + "/" + f
+                            print(d + "/" + f)
                             self.maxCliqueFromFile(mx, self.filePath("../../../../../../hypergraphs/hyperbench/" + d + "/") + f,
                                                     fischl_format=True, ground=False)
-        print mx
+        print(mx)
