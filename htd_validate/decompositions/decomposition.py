@@ -36,7 +36,7 @@ class Decomposition(object):
 
     def set_graph(self, hypergraph):
         self.hypergraph = hypergraph
-        print(hypergraph)
+        #print(hypergraph)
 
     def findIntersectingBag(self, edge):
         tdinter = None
@@ -313,8 +313,12 @@ class Decomposition(object):
     def edges_covered(self):
         # initialise with edges
         # TODO: something missing here
-        covered_edges = {e: False for e in self.hypergraph.edges()}
-        for e in self.hypergraph.edges():
+        #print(self.hypergraph.edges())
+        #print(self.hypergraph.edges().values())
+        #for e in self.hypergraph.edges():
+        #    print(e)
+        covered_edges = {e: False for e in self.hypergraph.edges_iter()}
+        for e in self.hypergraph.edges_iter():
             if not any(set(e) <= bag for bag in self.bags.values()):
                 logging.error('Edge "%s" is not covered in any bag.' % str(e))
                 return False
