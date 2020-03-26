@@ -456,6 +456,11 @@ class Hypergraph(object):
         #prog.write(":~ u(X). [-1@1,X]")
         return prog.getvalue()
 
+    def encoding_maximize_neighborhood(self):
+        prog = StringIO()
+        prog.write("#maximize { 1,Y:e(A,Y),e(A,X),u(X) }.\n")
+        return prog.getvalue()
+
     def encoding_maximize_hyperedges(self, minimize=False):
         prog = StringIO()
 
@@ -497,7 +502,7 @@ class Hypergraph(object):
                     prog.write("e({0}, {1}).\n".format(k, v))
         return prog.getvalue()
 
-    def encoding_largest_k_hyperclique(self, prevent_k_hyperedge=3):
+    def encoding_largest_k_hyperclique(self, prevent_k_hyperedge=3, oneshot=False):
         prog = StringIO()
 
         prog.write(self.encoding_clique_guess())
@@ -511,6 +516,15 @@ class Hypergraph(object):
                 for v in e:
                     prog.write("e({0}, {1}).\n".format(k, v))
 
+        if oneshot:
+            prog.write(":- e(A,_), #count {{ 1,Y : e(A,Y), u(Y) }} >= {0}.\n".format(prevent_k_hyperedge))
+        else:
+            prog.write(self.encoding_prevent_k_hyperclique(prevent_k_hyperedge))
+        return prog.getvalue()
+
+    def encoding_prevent_k_hyperclique(self, prevent_k_hyperedge=3):
+        prog = StringIO()
+
         prog.write(":- ")
         for i in range(0, prevent_k_hyperedge):
             if i > 0:
@@ -518,7 +532,6 @@ class Hypergraph(object):
             prog.write("e(X, Y{0}), u(Y{0})".format(i))
         prog.write(".\n")
         return prog.getvalue()
-
 
     # --solve-limit=<n>[,<m>] : Stop search after <n> conflicts or <m> restarts
     def solve_asp(self, encoding, clingoctl=None, timeout=10, enum=False, usc=True, solve_limit="umax,umax"):
@@ -562,7 +575,7 @@ class Hypergraph(object):
             return aset
 
         # print "XX, ", self.__edges, self.__vertices
-        print(encoding)
+        #print(encoding)
 
         c.add("prog", [], encoding)
 

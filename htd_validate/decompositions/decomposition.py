@@ -237,7 +237,7 @@ class Decomposition(object):
                             log_critical('Empty bag.')
                             exit(2)
                         bag_name = int(line[1])
-                        if decomp.bags.has_key(bag_name):
+                        if bag_name in decomp.bags.keys():
                             log_critical('Duplicate bag.')
                             exit(2)
                         # TODO: implement type checking for htd|fhtd
@@ -311,8 +311,8 @@ class Decomposition(object):
     def edges_covered(self):
         # initialise with edges
         # TODO: something missing here
-        covered_edges = {e: False for e in self.hypergraph.edges_iter()}
-        for e in self.hypergraph.edges_iter():
+        covered_edges = {e: False for e in self.hypergraph.edges()}
+        for e in self.hypergraph.edges():
             if not any(set(e) <= bag for bag in self.bags.values()):
                 logging.error('Edge "%s" is not covered in any bag.' % str(e))
                 return False
@@ -339,7 +339,7 @@ class Decomposition(object):
     def is_connected(self):
         vertex2bags = self.bag_occuences()
         # print self.hypergraph.number_of_edges()
-        for v in self.hypergraph.nodes_iter():
+        for v in self.hypergraph.nodes():
             logging.debug("vertex %s" % v)
             SG = self.tree.subgraph(vertex2bags[v])
             if not nx.is_connected(SG.to_undirected()):

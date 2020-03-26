@@ -52,7 +52,7 @@ class TreeDecomposition(Decomposition):
     # TODO: move the validation parts to the validators???
     def vertices_covered(self):
         occurences = self.bag_occuences()
-        for v in self.hypergraph.nodes_iter():
+        for v in self.hypergraph.nodes():
             if v not in occurences:
                 logging.error('Vertex "%s" does not occur in any bag.' % v)
                 logging.error('Bags contain the following vertices: %s' % occurences)
@@ -89,7 +89,7 @@ class TreeDecomposition(Decomposition):
 
     def max_bag_size(self):
         ret = 0
-        for b in self.bags.itervalues():
+        for b in self.bags.values():
             ret = max(ret, len(b))
         return ret
 
