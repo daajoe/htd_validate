@@ -29,14 +29,14 @@ import gzip
 import logging
 import lzma
 import mimetypes
+import sys
 import threading
 import time
-import sys
 from bz2 import BZ2File
-from io import StringIO
-
 # noinspection PyUnresolvedReferences
 from htd_validate.utils import relabelling as relab
+from io import StringIO
+import re
 
 try:
     import cplex as cx
@@ -477,7 +477,7 @@ class Hypergraph(object):
             # prog.write(":~ missing(A). [-1@1,A]\n" if minimize else ":~ e(A,_), not missing(A). [-1@1,A]\n")
         return prog.getvalue()
 
-    #def encoding_maximize_incompletely_used_hyperedges(self, minimize=False):
+    # def encoding_maximize_incompletely_used_hyperedges(self, minimize=False):
     #    prog = StringIO()
     #
     #    if len(self.__edges) > 0:
@@ -485,7 +485,6 @@ class Hypergraph(object):
     #        prog.write("#maximize { 1,A:e(A,X),u(X),missing(A) }.\n" if minimize else "#maximize { 1,A:e(A,X),u(X),not missing(A) }.\n")
     #        #prog.write(":~ missing(A). [-1@1,A]\n" if minimize else ":~ e(A,_), not missing(A). [-1@1,A]\n")
     #    return prog.getvalue()
-
 
     def encoding_maximize_exclude_twins(self, twins):
         prog = StringIO()
@@ -863,7 +862,6 @@ class Hypergraph(object):
 
     @classmethod
     def fromstream_fischlformat(clazz, stream):
-
         HG = clazz(non_numerical=True)
         for line in stream:
             line = line.replace('\n', '')[:-1]
@@ -883,8 +881,30 @@ class Hypergraph(object):
                 elif char != ')':
                     collect.append(char)
             HG.add_hyperedge(edge_vertices, name=edge_name)
-        # print(HG.number_of_edges(), HG.number_of_nodes())
-        # exit(1)
+        return HG
+
+    @classmethod
+    def fromstream_fischlformat_re(clazz, stream):
+        HG = clazz(non_numerical=True)
+        istream = ''.join(stream.readlines()).replace('\n', ' ')
+        for line in re.findall(r'(\w+\s*\((\s*\w+\s*,\s*)*\w+\s*\)\s*)', istream):
+            line = line[0]
+            edge_name = None
+            edge_vertices = []
+            # replace whitespaces
+            line = line.replace(' ', '')
+
+            collect = []
+            for char in line:
+                if char == '(':
+                    edge_name = ''.join(collect)
+                    collect = []
+                elif char == ',' or char == ')':
+                    edge_vertices.append(''.join(collect))
+                    collect = []
+                elif char != ')':
+                    collect.append(char)
+            HG.add_hyperedge(edge_vertices, name=edge_name)
         return HG
 
     # TODO: move from_file to a central part
@@ -926,7 +946,15 @@ class Hypergraph(object):
             else:
                 raise IOError('Unknown input type "%s" for file "%s"' % (mtype, filename))
             if fischl_format:
-                hypergraph = Hypergraph.fromstream_fischlformat(stream)
+                hypergraph_old = Hypergraph.fromstream_fischlformat(stream)
+                stream.seek(0)
+                hypergraph = Hypergraph.fromstream_fischlformat_re(stream)
+                if hypergraph_old.number_of_nodes() != hypergraph.number_of_nodes() and \
+                        hypergraph_old.number_of_edges() != hypergraph.number_of_edges():
+                    logging.error(
+                        f"Hypergraph mismatch between old and new reader (#nodes/#hedges). "
+                        f"Old:{hypergraph_old.number_of_nodes()}/{hypergraph_old.number_of_edges()} "
+                        f"New:{hypergraph.number_of_nodes()}/{hypergraph.number_of_edges()}")
             else:
                 hypergraph = Hypergraph.fromstream_dimacslike(stream)
         finally:
