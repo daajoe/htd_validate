@@ -78,7 +78,7 @@ class TreeDecomposition(Decomposition):
         relabeled_bags = {tree_mapping[k]: v for k, v in self.bags.iteritems()}
         relabeled_bags = sorted(relabeled_bags.items(), key=itemgetter(0))
         for bag_id, bag in relabeled_bags:
-            ostream.write('b %s %s\n' % (bag_id, ' '.join(map(str, bag))))
+            ostream.write('b %s %s\n' % (bag_id, ' '.join(list(map(str, bag)))))
         for u, v in tree.edges_iter():
             ostream.write('%s %s\n' % (u, v))
         ostream.flush()
@@ -95,7 +95,7 @@ class TreeDecomposition(Decomposition):
         return ret
 
     def get_first_node(self, max_bag_size):
-        bagids2lengths = dict(zip(self.bags.keys(), map(len, self.bags.values())))
+        bagids2lengths = dict(zip(self.bags.keys(), list(map(len, self.bags.values()))))
         lengths = bagids2lengths.values()
         if not max_bag_size:
             max_bag_size = max(lengths)

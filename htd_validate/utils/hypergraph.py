@@ -299,7 +299,7 @@ class Hypergraph(object):
         if clingo is None:
             raise ImportError()
 
-        #TODO:
+        # TODO:
         # replace with
         # with prg.solve_iter() as it:
         #     for m in it: print
@@ -444,16 +444,16 @@ class Hypergraph(object):
     # we use negative costs to maximize
     def encoding_maximize(self):
         prog = StringIO()
-        #sep = lambda pos: " }.\n" if pos == len(self.__vertices) - 1 else ";"
+        # sep = lambda pos: " }.\n" if pos == len(self.__vertices) - 1 else ";"
 
-        #pos = 0
-        #if len(self.__vertices) > 0:
+        # pos = 0
+        # if len(self.__vertices) > 0:
         #    prog.write("#maximize { ")
         #    for u in self.__vertices:
         #        pos += 1
 
         prog.write("#maximize { 1,X:u(X) }.")
-        #prog.write(":~ u(X). [-1@1,X]")
+        # prog.write(":~ u(X). [-1@1,X]")
         return prog.getvalue()
 
     def encoding_maximize_neighborhood(self):
@@ -474,7 +474,7 @@ class Hypergraph(object):
         if len(self.__edges) > 0:
             prog.write("missing(A) :- e(A,U), not u(U).\n")
             prog.write("#maximize { 1,A:missing(A) }.\n" if minimize else "#maximize { 1,A:e(A,_),not missing(A) }.\n")
-            #prog.write(":~ missing(A). [-1@1,A]\n" if minimize else ":~ e(A,_), not missing(A). [-1@1,A]\n")
+            # prog.write(":~ missing(A). [-1@1,A]\n" if minimize else ":~ e(A,_), not missing(A). [-1@1,A]\n")
         return prog.getvalue()
 
     #def encoding_maximize_incompletely_used_hyperedges(self, minimize=False):
@@ -491,18 +491,18 @@ class Hypergraph(object):
         prog = StringIO()
         sep = lambda ps, l, twin: " }}. [X-1,{0}]\n".format(twin) if ps == l - 1 else ";"
 
-        #prog.write("#maximize { 1-X,Y:tw(Y,X),X>1 }.\n")
-        #prog.write(":~ tw(Y,X). [X-1@1,Y]\n")
+        # prog.write("#maximize { 1-X,Y:tw(Y,X),X>1 }.\n")
+        # prog.write(":~ tw(Y,X). [X-1@1,Y]\n")
         pos = 0
         for ts in twins:
-            #print(ts)
-            prog.write(":~ X>1,X=#count {{ ".format(pos+1))
+            # print(ts)
+            prog.write(":~ X>1,X=#count {{ ".format(pos + 1))
             posi = 0
             for t in ts:
-                prog.write("1,{0}:u({0}){1}".format(t, sep(posi, len(ts), pos+1)))
+                prog.write("1,{0}:u({0}){1}".format(t, sep(posi, len(ts), pos + 1)))
                 posi += 1
             pos += 1
-        #print(prog.getvalue())
+        # print(prog.getvalue())
         return prog.getvalue()
 
     def encoding_largest_clique(self, maximize=True):
@@ -536,7 +536,7 @@ class Hypergraph(object):
                     for v in e:
                         prog.write("e({0}, {1}).\n".format(k, v))
 
-        #prog.write(":- e(A,_), #count {{ 1,Y : e(A,Y), u(Y) }} >= {0}.\n".format(prevent_k_hyperedge))
+        # prog.write(":- e(A,_), #count {{ 1,Y : e(A,Y), u(Y) }} >= {0}.\n".format(prevent_k_hyperedge))
         prog.write(self.encoding_prevent_k_hyperclique(prevent_k_hyperedge))
         return prog.getvalue()
 
@@ -552,7 +552,7 @@ class Hypergraph(object):
         return prog.getvalue()
 
     # --solve-limit=<n>[,<m>] : Stop search after <n> conflicts or <m> restarts
-    #@deprecated
+    # @deprecated
     def solve_asp(self, encoding, clingoctl=None, timeout=10, enum=False, usc=True, solve_limit="umax,umax"):
         if clingo is None:
             raise ImportError()
@@ -594,7 +594,7 @@ class Hypergraph(object):
             return aset
 
         # print "XX, ", self.__edges, self.__vertices
-        #print(encoding)
+        # print(encoding)
 
         c.add("prog", [], encoding)
 
@@ -719,7 +719,7 @@ class Hypergraph(object):
 
     def edge_rank(self, n):
         # print self.incident_edges(n).values()
-        return map(lambda x: (x, len(x)), self.incident_edges(n).values())
+        return list(map(lambda x: (x, len(x)), self.incident_edges(n).values()))
 
     # @staticmethod
     # def project_edge(e, p):
@@ -863,8 +863,8 @@ class Hypergraph(object):
 
     @classmethod
     def fromstream_fischlformat(clazz, stream):
-        HG = clazz(non_numerical=True)
 
+        HG = clazz(non_numerical=True)
         for line in stream:
             line = line.replace('\n', '')[:-1]
             edge_name = None
@@ -882,8 +882,9 @@ class Hypergraph(object):
                     collect = []
                 elif char != ')':
                     collect.append(char)
-            # print(edge_vertices)
             HG.add_hyperedge(edge_vertices, name=edge_name)
+        # print(HG.number_of_edges(), HG.number_of_nodes())
+        # exit(1)
         return HG
 
     # TODO: move from_file to a central part
@@ -911,7 +912,6 @@ class Hypergraph(object):
         if header_only:
             raise NotImplemented
         stream = None
-        hypergraph = clazz()
         try:
             mtype = mimetypes.guess_type(filename)[1]
             if mtype is None:
@@ -951,12 +951,10 @@ class Hypergraph(object):
         return v
 
     def add_hyperedge(self, X, name=None, edge_id=None):
-        # print name
         if len(X) <= 1:
             return
         if self.__non_numerical:
-            X = map(self.__nsymtab.get, X)
-        # print X
+            X = list(map(self.__nsymtab.get, X))
         if edge_id is None:
             edge_id = len(self.__edges) + 1
 
@@ -966,7 +964,7 @@ class Hypergraph(object):
         # remove/avoid already subsets of edges
         if not self.isSubsumed(set(X), checkSubsumes=True):
             self.__edges[edge_id] = Hypergraph.__edge_type(X)
-            self.__vertices.update(X)
+            self.__vertices.update(list(X))
         # else:
         #    print("subsumed: ", X)
         return X
@@ -1023,7 +1021,7 @@ class Hypergraph(object):
         stream.write('p %s %s %s\n' % (gr_string, self.number_of_nodes(), self.number_of_edges()))
         s = 'e ' if dimacs else ''
         for e_id, nodes in zip(range(self.number_of_edges()), self.edges_iter()):
-            nodes = ' '.join(map(str, nodes))
+            nodes = ' '.join(list(map(str, nodes)))
             stream.write('%s%s %s\n' % (s, e_id + 1, nodes))
         stream.flush()
 

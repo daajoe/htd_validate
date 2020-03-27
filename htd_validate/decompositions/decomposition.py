@@ -258,7 +258,7 @@ class Decomposition(object):
                             if strict and not header_seen:
                                 log_critical('Edge before header.')
                                 exit(2)
-                            u, v = map(int, line)
+                            u, v = list(map(int, line))
                             if u > header['num_bags']:
                                 log_critical("Edge label %s out of bounds (expected max %s bags)." % (u, num_bags))
                                 exit(2)

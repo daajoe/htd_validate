@@ -120,7 +120,7 @@ class Graph(nx.Graph):
                         if is_dimacs:
                             graph.add_edge(int(line[1]), int(line[2]))
                         elif is_formula:
-                            atoms = map(lambda x: abs(int(x)), line[0:-1])
+                            atoms = list(map(lambda x: abs(int(x)), line[0:-1]))
                             #print("formula{0}".format(atoms))
                             for i in atoms:
                                 for j in atoms:
