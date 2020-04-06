@@ -550,6 +550,13 @@ class Hypergraph(object):
         prog.write(".\n")
         return prog.getvalue()
 
+    encoder_k_hyperclique = lambda x, k: x.encoding_largest_k_hyperclique(prevent_k_hyperedge=k)
+    encoder_largest_clique = lambda x: x.encoding_largest_clique()
+    encoder_largest_clique_neighborhood = lambda x: x.encoding_largest_clique() + x.encoding_maximize_neighborhood()
+    encoder_largest_clique_wo_twins = lambda x: x.encoding_largest_clique() + x.encoding_maximize_exclude_twins(x.iter_twin_vertices())
+    encoder_clique_maximize_used_hyperedges = lambda x: x.encoding_largest_clique(maximize=False) + x.encoding_maximize_used_hyperedges()
+    encoder_clique_maximize_completely_used_hyperedges = lambda x: x.encoding_largest_clique(maximize=False) + x.encoding_maximize_completely_used_hyperedges()
+
     # --solve-limit=<n>[,<m>] : Stop search after <n> conflicts or <m> restarts
     # @deprecated
     def solve_asp(self, encoding, clingoctl=None, timeout=10, enum=False, usc=True, solve_limit="umax,umax"):
