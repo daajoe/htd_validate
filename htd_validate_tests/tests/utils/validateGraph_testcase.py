@@ -46,7 +46,7 @@ class ValidateGraphTestCase(unittest.TestCase):
             for d in dirs:
                 for _, _, files in os.walk(os.path.join(path, d)):
                     for f in files:
-                        print d + "/" + f
+                        print(d + "/" + f)
                         args["path"] = self.filePath("./hyperbench/" + d + "/") + f
                         function(args)
                         #self.maxCliqueFromFile(mx, self.filePath("../../../../../hypergraphs/hyperbench/" + d + "/") + f,

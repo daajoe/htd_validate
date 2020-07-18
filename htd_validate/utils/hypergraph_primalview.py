@@ -18,23 +18,23 @@
 # License along with hypergraph.py.  If not, see
 # <http://www.gnu.org/licenses/>.
 # from __future__ import print_function
-import deprecation
+# import deprecation
 import networkx as nx
 # import cplex
 import copy
 
 from htd_validate.utils.formula import Formula
-from hypergraph import Hypergraph
+from htd_validate.utils.hypergraph import Hypergraph
 
 import subprocess
 # import cplex
 import copy
 import subprocess
 
-import deprecation
+# import deprecation
 import networkx as nx
 from htd_validate.utils.formula import Formula
-from hypergraph import Hypergraph
+from htd_validate.utils.hypergraph import Hypergraph
 
 
 class HypergraphPrimalView(object):
@@ -326,10 +326,10 @@ class HypergraphPrimalView(object):
                 pass
 
     # @deprecated("not tested; now replaced by ASP version in hypergraph")
-    @deprecation.deprecated(deprecated_in="1.0", removed_in="1.0",
-                            current_version="1.0",
-                            details="not tested; now replaced by ASP version for various reasons in Hypergraph")
-    def largest_clique(self, solver=["glucose", "-model"], return_code_sat=10, timeout=None):
+    # @deprecation.deprecated(deprecated_in="1.0", removed_in="1.0",
+    #                         current_version="1.0",
+    #                         details="not tested; now replaced by ASP version for various reasons in Hypergraph")
+    def largest_clique_sat(self, solver=["glucose", "-model"], return_code_sat=10, timeout=None):
 
         clause = Formula()
         adj = self.__hg.adj
@@ -348,7 +348,7 @@ class HypergraphPrimalView(object):
                         clause.addClause("-{0} -{1}".format(clause.map(u), clause.map(v)))
 
             for e in self.__hg.edges.values():
-                # for k in xrange(3, len(e) + 1):
+                # for k in range(3, len(e) + 1):
                 # prevent 3 elements from the same edge
 
                 k = 3
@@ -365,10 +365,10 @@ class HypergraphPrimalView(object):
                         break
 
                     # next position
-                    for i in xrange(k - 1, -1, -1):
+                    for i in range(k - 1, -1, -1):
                         if sub[i] < len(e) - (k - i - 1):
                             sub[i] += 1
-                            for j in xrange(i + 1, k):
+                            for j in range(i + 1, k):
                                 sub[j] = sub[i] + (j - i)
 
             # seek to the file beginning and correct header
@@ -380,14 +380,17 @@ class HypergraphPrimalView(object):
         for line in p.stdout:
             if line.startswith("v"):
                 vals = line.split(" ")
-                print vals
+                print(vals)
+
+
+
 
     # handle with care!
     # returns tuple (list of "almost" (depending on \emph{simplicial_diff}) simplicial vertices, clique) per clique
     # fixme: modify/replace nx.enumerate_all_cliques!
     def simplicial_iter(self, simplicial_diff=0, clique_prevent_he_at_least=3, clique_prevent_he_up_to=3):
         cl = None
-        for k in xrange(clique_prevent_he_up_to, clique_prevent_he_at_least - 1, -1):
+        for k in range(clique_prevent_he_up_to, clique_prevent_he_at_least - 1, -1):
             maxcl = 0
             aset = self.__hg.largest_clique_asp(clingoctl=cl, prevent_k_hyperedge=k, ground=False)
             cl = aset[3]

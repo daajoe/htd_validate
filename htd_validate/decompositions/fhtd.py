@@ -1,5 +1,5 @@
 import logging
-from cStringIO import StringIO
+from io import StringIO
 
 import networkx as nx
 from htd_validate.decompositions import GeneralizedHypertreeDecomposition
@@ -73,8 +73,7 @@ class FractionalHypertreeDecomposition(GeneralizedHypertreeDecomposition):
     def validate(self, graph, strict=True):
         self.hypergraph = graph
         if self.is_tree(
-                strict=strict) and self.edges_covered() and self.is_connected() and self.edge_function_holds():  # and \
-            # self.edge_function_holds():
+                strict=strict) and self.edges_covered() and self.is_connected() and self.edge_function_holds():
             return True
         else:
             logging.error('ERROR in Tree Decomposition.')

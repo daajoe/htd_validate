@@ -43,7 +43,7 @@ class TestValidateTD(vtd.ValidateTDTestCase):
         #if ord is None:
         #    ord = range(g.number_of_nodes() + 1)
         tdx = td.TreeDecomposition.from_ordering(g, ord)
-        print tdx.chi, tdx.T.edges()
+        print(tdx.chi, tdx.T.edges())
         #tdx.show(2)
         self.assertEqual(maxbag, tdx.max_bag_size())
         self.assertTrue(tdx.validate(g))

@@ -1,6 +1,6 @@
 import logging
-from cStringIO import StringIO
-from itertools import count, imap, izip
+from io import StringIO
+from itertools import count
 from operator import itemgetter
 
 import networkx as nx
@@ -52,7 +52,7 @@ class TreeDecomposition(Decomposition):
     # TODO: move the validation parts to the validators???
     def vertices_covered(self):
         occurences = self.bag_occuences()
-        for v in self.hypergraph.nodes_iter():
+        for v in self.hypergraph.nodes():
             if v not in occurences:
                 logging.error('Vertex "%s" does not occur in any bag.' % v)
                 logging.error('Bags contain the following vertices: %s' % occurences)
@@ -61,6 +61,7 @@ class TreeDecomposition(Decomposition):
 
     def validate(self, graph, strict=True):
         self.hypergraph = graph
+        #print(self.hypergraph)
         if self.is_tree(strict=strict) and self.edges_covered() and self.is_connected() and self.vertices_covered():
             return True
         else:
@@ -77,7 +78,7 @@ class TreeDecomposition(Decomposition):
         relabeled_bags = {tree_mapping[k]: v for k, v in self.bags.iteritems()}
         relabeled_bags = sorted(relabeled_bags.items(), key=itemgetter(0))
         for bag_id, bag in relabeled_bags:
-            ostream.write('b %s %s\n' % (bag_id, ' '.join(imap(str, bag))))
+            ostream.write('b %s %s\n' % (bag_id, ' '.join(list(map(str, bag)))))
         for u, v in tree.edges_iter():
             ostream.write('%s %s\n' % (u, v))
         ostream.flush()
@@ -89,12 +90,12 @@ class TreeDecomposition(Decomposition):
 
     def max_bag_size(self):
         ret = 0
-        for b in self.bags.itervalues():
+        for b in self.bags.values():
             ret = max(ret, len(b))
         return ret
 
     def get_first_node(self, max_bag_size):
-        bagids2lengths = dict(zip(self.bags.keys(), map(len, self.bags.values())))
+        bagids2lengths = dict(zip(self.bags.keys(), list(map(len, self.bags.values()))))
         lengths = bagids2lengths.values()
         if not max_bag_size:
             max_bag_size = max(lengths)
