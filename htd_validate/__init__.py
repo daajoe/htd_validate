@@ -1,4 +1,4 @@
-#!/usr/bin/evn false
+#!/usr/bin/env false
 __all__ = ['']
 import htd_validate.decompositions
 import htd_validate.validators
