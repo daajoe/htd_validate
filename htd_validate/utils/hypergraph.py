@@ -241,7 +241,7 @@ class Hypergraph(object):
                 maxe = e
         return maxe
 
-    def max_idx(self):
+    def largest_idx(self):
         maxc = 0
         for e in self.__edges.values():
             if max(e) > maxc:
@@ -1060,7 +1060,7 @@ class Hypergraph(object):
         """
         gr_string = 'edge' if dimacs else non_dimacs 
         s = 'p ' if dimacs else ''
-        stream.write(('p %s %s %s\n' % (gr_string, self.max_idx(), self.number_of_edges())).encode())
+        stream.write(('p %s %s %s\n' % (gr_string, self.largest_idx(), self.number_of_edges())).encode())
         s = 'e ' if dimacs else ''
         for e_id, nodes in zip(range(self.number_of_edges()), self.edges_iter()):
             nodes = ' '.join(list(map(str, nodes)))
