@@ -241,6 +241,13 @@ class Hypergraph(object):
                 maxe = e
         return maxe
 
+    def max_idx(self):
+        maxc = 0
+        for e in self.__edges.values():
+            if max(e) > maxc:
+                maxc = max(e)
+        return maxc
+
     def largest_clique(self, timeout=120):
         if z3 is None:
             raise ImportError()
@@ -985,7 +992,7 @@ class Hypergraph(object):
         self.__vertices.add(v)
         return v
 
-    def add_hyperedge(self, X, name=None, edge_id=None):
+    def add_hyperedge(self, X, name=None, edge_id=None, checkSubsumes = True):
         if len(X) <= 1:
             return
         if self.__non_numerical:
@@ -997,7 +1004,7 @@ class Hypergraph(object):
             self.__elabel[edge_id] = name
 
         # remove/avoid already subsets of edges
-        if not self.isSubsumed(set(X), checkSubsumes=True):
+        if not self.isSubsumed(set(X), checkSubsumes=checkSubsumes):
             self.__edges[edge_id] = Hypergraph.__edge_type(X)
             self.__vertices.update(list(X))
         # else:
@@ -1042,7 +1049,7 @@ class Hypergraph(object):
     def write_gr(self, stream):
         return self.write_graph(stream, dimacs=False)
 
-    def write_graph(self, stream, dimacs=False, non_dimacs='htw'):
+    def write_graph(self, stream, dimacs=False, non_dimacs='htw', print_id=True):
         """
         :param stream: stream where to output the hypergraph
         :type stream: cString
@@ -1053,11 +1060,14 @@ class Hypergraph(object):
         """
         gr_string = 'edge' if dimacs else non_dimacs 
         s = 'p ' if dimacs else ''
-        stream.write(('p %s %s %s\n' % (gr_string, self.number_of_nodes(), self.number_of_edges())).encode())
+        stream.write(('p %s %s %s\n' % (gr_string, self.max_idx(), self.number_of_edges())).encode())
         s = 'e ' if dimacs else ''
         for e_id, nodes in zip(range(self.number_of_edges()), self.edges_iter()):
             nodes = ' '.join(list(map(str, nodes)))
-            stream.write(('%s%s %s\n' % (s, e_id + 1, nodes)).encode())
+            if print_id:
+                stream.write(('%s%s %s\n' % (s, e_id + 1, nodes)).encode())
+            else:
+                stream.write(('%s %s\n' % (s, nodes)).encode())
         stream.flush()
 
     def __str__(self):
