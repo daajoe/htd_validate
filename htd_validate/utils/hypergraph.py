@@ -1004,7 +1004,7 @@ class Hypergraph(object):
             self.__elabel[edge_id] = name
 
         # remove/avoid already subsets of edges
-        if not self.isSubsumed(set(X), checkSubsumes=checkSubsumes):
+        if not checkSubsumes or not self.isSubsumed(set(X), checkSubsumes=True):
             self.__edges[edge_id] = Hypergraph.__edge_type(X)
             self.__vertices.update(list(X))
         # else:
