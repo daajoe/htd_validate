@@ -1049,7 +1049,7 @@ class Hypergraph(object):
     def write_gr(self, stream):
         return self.write_graph(stream, dimacs=False)
 
-    def write_graph(self, stream, dimacs=False, non_dimacs='htw', print_id=True):
+    def write_graph(self, stream, dimacs=False, non_dimacs='htw', print_id=False):
         """
         :param stream: stream where to output the hypergraph
         :type stream: cString
@@ -1067,7 +1067,7 @@ class Hypergraph(object):
             if print_id:
                 stream.write(('%s%s %s\n' % (s, e_id + 1, nodes)).encode())
             else:
-                stream.write(('%s %s\n' % (s, nodes)).encode())
+                stream.write(('%s%s\n' % (s, nodes)).encode())
         stream.flush()
 
     def __str__(self):
